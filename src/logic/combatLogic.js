@@ -1,6 +1,6 @@
 
 import { Game } from '../state/gameState.js';
-import { floorData } from '../data/mobs.js';
+import { floorData } from '../data/floors.js';
 import { showNotification, showFloatingText, playSfx } from '../utils/helpers.js';
 import { openModal, closeModal } from '../ui/modals.js';
 import { updatePlayerHUD } from '../ui/hud.js';
@@ -24,7 +24,7 @@ export function initCombat(isBossFight) {
         mobs.forEach(mob => {
             const el = document.createElement('div');
             el.className = 'mob-card';
-            if(mob.type === 'boss') el.classList.add('selected'); // Just for boss visual
+            if(mob.type === 'boss') el.classList.add('selected'); 
             
             el.innerHTML = `
                 <div class="mob-card-icon">${mob.icon || '👾'}</div>
@@ -59,6 +59,10 @@ function startCombat(mobTemplate, isBoss) {
     
     updateCombatUI();
     openModal('combatModal');
+    
+    // Initial Log
+    const log = document.getElementById('combat-log-display');
+    log.innerHTML = ''; 
     addCombatLog(`Combate iniciado contra ${enemy.name}!`);
 }
 
@@ -69,7 +73,6 @@ export function combatAction(actionType) {
     const enemy = Game.currentCombat.enemy;
     
     if (actionType === 'attack') {
-        // Damage formula with randomization
         const rawDmg = Math.max(1, player.effectiveAttack - enemy.defense);
         const damage = Math.floor(rawDmg * (0.9 + Math.random() * 0.2));
         
@@ -89,7 +92,6 @@ export function combatAction(actionType) {
 }
 
 function dealDamage(amount, target, source) {
-    // Determine actual target object
     const isPlayerTarget = (source === 'enemy');
     
     if (isPlayerTarget) {
@@ -99,17 +101,31 @@ function dealDamage(amount, target, source) {
     }
     
     const displayEl = isPlayerTarget ? document.getElementById('combat-player-display') : document.getElementById('combat-enemy-display');
-    
-    // Add visual flare
+    const modalContent = document.querySelector('#combatModal .modal-content');
+
+    // Visual Flair: Flash
     displayEl.classList.add('damage-flash');
     setTimeout(() => displayEl.classList.remove('damage-flash'), 200);
     
-    showFloatingText(`-${amount}`, displayEl, { type: 'damage', shaky: true });
+    // Visual Flair: Screen Shake on heavy hit
+    const maxHp = isPlayerTarget ? Game.player.maxHp : target.hp;
+    if (amount > maxHp * 0.1) {
+        modalContent.classList.add('screen-shake');
+        setTimeout(() => modalContent.classList.remove('screen-shake'), 450);
+    }
+
+    // Dynamic Floating Text
+    showFloatingText(`-${amount}`, displayEl, { 
+        type: 'damage', 
+        shaky: amount > maxHp * 0.15,
+        large: amount > maxHp * 0.2
+    });
+
     addCombatLog(`${source === 'player' ? 'Atacas' : target.name + ' ataca'} por ${amount} daño.`);
+    playSfx('hit'); 
     
     updateCombatUI();
     
-    // Check death
     if (isPlayerTarget && Game.player.hp <= 0) {
         endCombat(false);
     } else if (!isPlayerTarget && target.currentHp <= 0) {
@@ -121,7 +137,6 @@ function endTurn() {
     Game.currentCombat.playerTurn = false;
     updateCombatUI();
     
-    // Enemy turn delay
     setTimeout(() => {
         if(Game.currentCombat.active) enemyTurn();
     }, 1000);
@@ -146,7 +161,6 @@ function enemyTurn() {
 function endCombat(win, fled = false) {
     Game.currentCombat.active = false;
     
-    // Visual finish
     const modalContent = document.querySelector('#combatModal .modal-content');
     if(win) modalContent.classList.add('combat-victory');
     else if(!fled) modalContent.classList.add('combat-defeat');
@@ -173,10 +187,10 @@ function endCombat(win, fled = false) {
             }
         } else {
             showNotification("Has sido derrotado...", "error");
-            Game.player.hp = Math.floor(Game.player.maxHp * 0.1); // Revive with 10%
+            Game.player.hp = Math.floor(Game.player.maxHp * 0.1); 
         }
         updatePlayerHUD();
-    }, 1500); // Wait for visual effect
+    }, 1500);
 }
 
 function updateCombatUI() {
@@ -184,7 +198,6 @@ function updateCombatUI() {
     const e = Game.currentCombat.enemy;
     if(!e) return;
     
-    // Player UI
     document.getElementById('combat-player-hp-current').textContent = p.hp;
     document.getElementById('combat-player-hp-max').textContent = p.maxHp;
     const pHpPct = (p.hp / p.maxHp) * 100;
@@ -194,7 +207,6 @@ function updateCombatUI() {
     if(pHpPct < 25) pHpBar.classList.add('critical');
     else if(pHpPct < 50) pHpBar.classList.add('low');
     
-    // Enemy UI
     document.getElementById('combat-enemy-hp-current').textContent = e.currentHp;
     document.getElementById('combat-enemy-hp-max').textContent = e.hp;
     const eHpPct = (e.currentHp / e.hp) * 100;
@@ -207,7 +219,6 @@ function updateCombatUI() {
     document.getElementById('combat-enemy-name').textContent = e.name;
     document.getElementById('combat-enemy-icon').textContent = e.icon;
     
-    // Turn Indicator
     if(Game.currentCombat.playerTurn) {
         document.getElementById('combat-player-display').classList.add('active-turn');
         document.getElementById('combat-enemy-display').classList.remove('active-turn');

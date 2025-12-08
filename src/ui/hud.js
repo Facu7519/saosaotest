@@ -1,6 +1,6 @@
 
 import { Game } from '../state/gameState.js';
-import { floorData } from '../data/mobs.js';
+import { floorData } from '../data/floors.js';
 import { calculateEffectiveStats } from '../logic/playerLogic.js';
 import { statusEffects } from '../data/skills.js';
 
@@ -25,28 +25,22 @@ export function updatePlayerHUD() {
     document.getElementById('current-exp').textContent = player.currentExp;
     document.getElementById('needed-exp').textContent = player.neededExp;
 
-    // HP Bar Logic - Critical Fix
+    // HP Bar Logic
     const hpBar = document.getElementById('sao-hp-bar');
     const safeMaxHp = Math.max(1, player.maxHp);
     const hpPercent = (player.hp / safeMaxHp) * 100;
     
-    // Set width
     hpBar.style.width = `${Math.max(0, Math.min(100, hpPercent))}%`;
-    
-    // Set Color Class
-    hpBar.className = 'sao-hp-bar-fill'; // Reset base class
+    hpBar.className = 'sao-hp-bar-fill'; 
     if (hpPercent < 25) {
-        hpBar.classList.add('critical'); // Red
+        hpBar.classList.add('critical'); 
     } else if (hpPercent < 50) {
-        hpBar.classList.add('low');      // Orange
+        hpBar.classList.add('low');      
     }
-    // Else default green
 
-    // Other bars
     document.getElementById('mp-bar-fill').style.width = `${(player.mp / Math.max(1, player.maxMp)) * 100}%`;
     document.getElementById('exp-bar-fill').style.width = `${(player.currentExp / Math.max(1, player.neededExp)) * 100}%`;
 
-    // Status Effects
     const displayElement = document.getElementById('player-status-effects-display');
     displayElement.innerHTML = '';
     player.activeStatusEffects.forEach(effect => {

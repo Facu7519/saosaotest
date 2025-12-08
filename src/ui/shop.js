@@ -1,6 +1,6 @@
 
 import { Game } from '../state/gameState.js';
-import { floorData } from '../data/mobs.js';
+import { floorData } from '../data/floors.js';
 import { baseItems } from '../data/items.js';
 import { showNotification } from '../utils/helpers.js';
 import { updatePlayerHUD } from './hud.js';
@@ -27,6 +27,7 @@ export function renderShop() {
         if(!base) return;
         const el = document.createElement('div');
         el.className = `shop-item rarity-${(base.rarity || 'Common').toLowerCase()}`;
+        el.setAttribute('data-rarity', base.rarity || 'Common');
         el.innerHTML = `
             <span class="item-icon">${base.icon}</span>
             <span class="item-name">${base.name}</span>

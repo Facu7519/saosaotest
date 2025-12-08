@@ -21,7 +21,6 @@ export function calculateEffectiveStats() {
     p.effectiveAttack = p.baseAttack + eqAtk;
     p.effectiveDefense = p.baseDefense + eqDef;
     
-    // Adjust HP/MP Cap without losing current unless overflow
     const oldMaxHp = p.maxHp;
     const oldMaxMp = p.maxMp;
     p.maxHp = p.baseMaxHp + eqHp;
@@ -39,13 +38,11 @@ export function trainPlayer() {
     if (Game.player.col >= cost) {
         Game.player.col -= cost;
         Game.player.baseAttack += 1;
-        // Probabilidad de subir defensa (0, 1 o 2)
         const defGain = Math.random() < 0.4 ? 2 : (Math.random() < 0.7 ? 1 : 0);
         Game.player.baseDefense += defGain;
         Game.player.baseMaxHp += 5;
         Game.player.baseMaxMp += 2;
         
-        // Sanar un poco
         Game.player.hp = Math.min(Game.player.hp + 5, Game.player.maxHp);
         Game.player.mp = Math.min(Game.player.mp + 2, Game.player.maxMp);
         
@@ -85,7 +82,6 @@ function levelUp() {
     calculateEffectiveStats();
     showNotification(`¡LEVEL UP! Nivel ${p.level}`, "success", 6000);
     
-    // Check passive unlocks
     Object.entries(passiveSkillData).forEach(([id, data]) => {
         if (data.levelReq === p.level && !p.passiveSkills.find(s => s.id === id)) {
             p.passiveSkills.push({ id, ...data });
@@ -105,7 +101,6 @@ export function addItemToInventory(itemData, quantity = 1) {
     } else {
         for(let i=0; i<quantity; i++) {
             const inst = { ...base, ...itemData, uid: genUid(), count: 1 };
-            // Ensure stats copy
             inst.stats = inst.stats ? JSON.parse(JSON.stringify(inst.stats)) : (base.stats ? JSON.parse(JSON.stringify(base.stats)) : {});
             Game.player.inventory.push(inst);
         }
@@ -125,7 +120,7 @@ export function equipItemByUid(uid) {
 
     const slot = base.slot;
     if (Game.player.equipment[slot]) {
-        unequipItem(slot); // Auto unequip current
+        unequipItem(slot); 
     }
 
     Game.player.equipment[slot] = Game.player.inventory.splice(idx, 1)[0];

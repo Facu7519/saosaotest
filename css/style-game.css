@@ -1,5 +1,5 @@
 
-/* style-game.css - Restauración Total */
+/* style-game.css - Restauración Total "Ideal" */
 
 /* --- Panel Interactivo Principal --- */
 .interactive-panel {
@@ -187,7 +187,7 @@
     to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* --- Grids e Ítems --- */
+/* --- Grids e Ítems (THE KEY PART) --- */
 .inventory-sections, .shop-sections, .blacksmith-sections, .training-sections {
     display: flex; gap: 2rem; margin-top: 1rem;
 }
@@ -197,13 +197,14 @@
 .player-equipment-container, .blacksmith-materials-info, .training-details-container { flex: 1; }
 
 .inventory-grid, .shop-grid, .blacksmith-grid, .training-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     gap: 12px; border: 1px solid rgba(70, 130, 180, 0.25);
     padding: 15px; border-radius: 10px; max-height: 480px;
     overflow-y: auto; background: rgba(10,10,18,0.3);
     align-content: start; justify-content: center;
 }
 
+/* High-Quality Detailed Item Card */
 .inventory-item, .shop-item, .blacksmith-item, .training-option {
     background: rgba(45, 50, 75, 0.6);
     border: 2px solid rgba(70, 130, 180, 0.4);
@@ -211,7 +212,7 @@
     font-size: 0.85em; cursor: pointer; transition: all 0.2s ease;
     position: relative; user-select: none;
     display: flex; flex-direction: column; align-items: center;
-    justify-content: flex-start; min-height: 250px;
+    justify-content: flex-start; min-height: 220px; /* Taller for details */
 }
 .inventory-item:hover, .shop-item:hover, .blacksmith-item:hover, .training-option:hover {
     transform: translateY(-6px) scale(1.02);
@@ -219,34 +220,64 @@
     border-color: #87CEEB;
 }
 
+/* Etiqueta de rareza */
+.inventory-item::after, .shop-item::after, .blacksmith-item::after {
+    content: attr(data-rarity);
+    position: absolute; top: 5px; right: 5px;
+    font-size: 10px; padding: 2px 6px; border-radius: 4px;
+    background: rgba(0,0,0,0.6); color: inherit; opacity: 0.95;
+    text-transform: uppercase; letter-spacing: 0.5px;
+}
+div.shop-item.rarity-common.common::after { display: none !important; }
+
 /* Iconos y Texto de Ítems */
 .item-icon {
     font-size: 3rem; display: flex; align-items: center; justify-content: center;
     margin-bottom: 8px; color: #e0e0e0; width: 56px; height: 56px;
+    background: rgba(0,0,0,0.2); border-radius: 8px;
 }
 .item-name {
-    font-weight: 700; margin-bottom: 6px; font-size: 12.24px; color: #b0c4de;
-    width: 100%; line-height: 1.2; word-break: break-word;
+    font-weight: 700; margin-bottom: 6px; font-size: 13px; color: #b0c4de;
+    width: 100%; line-height: 1.2; word-break: break-word; min-height: 32px;
+    display: flex; align-items: center; justify-content: center;
 }
-.item-details, .item-price, .item-materials, .item-chance {
-    font-size: 0.75em; color: #b0c4de; margin-top: 3px;
+.item-rarity-text { /* Displayed inside the card as well */
+    font-weight: 700; margin-top: 4px; font-size: 0.9em;
+}
+.item-details, .item-level-req, .training-stats-gain {
+    font-size: 0.75em; color: #a0b0d0; margin-top: 4px;
+    line-height: 1.3;
+}
+.item-price {
+    font-size: 0.9em; color: #FFD700; font-weight: bold;
+    margin-top: auto; padding-top: 8px; width: 100%; border-top: 1px solid rgba(255,255,255,0.1);
 }
 .item-count {
     position: absolute; bottom: 10px; right: 10px;
     background: linear-gradient(180deg, rgba(0,0,0,0.7), rgba(10,10,18,0.9));
-    border-radius: 50%; padding: 6px 10px; font-size: 0.85em;
-    color: #e0e0e0; border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 50%; padding: 4px 8px; font-size: 0.85em;
+    color: #fff; border: 1px solid rgba(255,255,255,0.2);
 }
 
-/* Rarezas */
+/* Rarezas Colors */
 .rarity-common { border-color: rgba(204,204,204,0.6); color: rgba(204,204,204,0.9); }
-.rarity-rare { border-color: #87ceeb; color: #87ceeb; box-shadow: 0 0 15px rgba(135,206,235,0.2); }
-.rarity-epic { border-color: #b19cd9; color: #b19cd9; box-shadow: 0 0 15px rgba(177,156,217,0.2); }
-.rarity-mythic { border-color: #ff4d4d; color: #ff4d4d; box-shadow: 0 0 15px rgba(255,77,77,0.3); background: rgba(60, 35, 35, 0.7); }
+.rarity-rare { border-color: #87ceeb; color: #87ceeb; box-shadow: 0 0 10px rgba(135,206,235,0.1); }
+.rarity-epic { border-color: #b19cd9; color: #b19cd9; box-shadow: 0 0 10px rgba(177,156,217,0.15); }
+.rarity-mythic { border-color: #ff4d4d; color: #ff4d4d; box-shadow: 0 0 15px rgba(255,77,77,0.2); background: rgba(60, 35, 35, 0.7); }
 
 .inventory-item[data-rarity="Mythic"] .item-name { color: #ff4d4d; text-shadow: 0 0 8px rgba(255,77,77,0.7); }
 
-/* --- Stats Modal (Restaurado) --- */
+/* --- Training specific "Grey Card" --- */
+.training-option {
+    min-height: 200px;
+    background: rgba(30, 35, 45, 0.8);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+.training-stats-gain {
+    display: block; margin-top: 10px; color: #ccc;
+}
+
+/* --- Stats Modal --- */
 .stats-category { margin-bottom: 1.5rem; }
 .stats-category h3 {
     color: #87CEEB; font-size: 1.4rem; border-bottom: 1px solid rgba(70, 130, 180, 0.3);
@@ -254,11 +285,12 @@
 }
 .stat-line {
     display: flex; justify-content: space-between; padding: 0.3rem 0; font-size: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 .stat-line .stat-label { color: #b0c4de; }
 .stat-line .stat-value { color: #e0e0e0; font-weight: bold; }
 
-/* --- Combate (Restaurado) --- */
+/* --- Combate --- */
 .combat-arena {
     display: flex; justify-content: space-around; align-items: flex-start;
     gap: 2rem; margin-bottom: 2rem;
@@ -279,7 +311,7 @@
 }
 
 .combatant-icon { font-size: 4rem; margin-bottom: 0.5rem; }
-.combatant-icon img { max-width: 200px; border-radius: 8px; }
+.combatant-icon img { max-width: 200px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
 
 .combat-hp-bar-container {
     width: 100%; height: 25px; background-color: #1e1f26;
@@ -290,7 +322,7 @@
     height: 100%; background: linear-gradient(to right, #5cb85c, #4cae4c);
     border-radius: 4px; transition: width 0.3s ease-out;
     display: flex; align-items: center; justify-content: center;
-    color: white; font-size: 0.8rem;
+    color: white; font-size: 0.8rem; text-shadow: 0 1px 2px rgba(0,0,0,0.8);
 }
 #combat-enemy-hp-bar-fill { background: linear-gradient(to right, #d9534f, #c9302c); }
 #combat-enemy-hp-bar-fill.low { background: linear-gradient(to right, #ffc107, #f0ad4e); }
@@ -302,7 +334,7 @@
     border: 1px solid rgba(70,130,180,0.2);
 }
 
-/* Floating Text (Restaurado) */
+/* Floating Text */
 .floating-text {
     position: fixed; pointer-events: none; z-index: 9999;
     font-weight: 900; font-family: 'Rajdhani', sans-serif; font-size: 2.2rem;
@@ -327,49 +359,42 @@
 .floating-text.animate { animation: floatUpFade 900ms cubic-bezier(.2,.9,.2,1) forwards; }
 .floating-text.shaky { animation: floatShake 850ms cubic-bezier(.25,.8,.25,1) forwards; }
 
-/* Mob Selection (Diseño Avanzado) */
-.mob-list-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 18px; padding: 25px; max-height: 420px; overflow-y: auto;
-    border: 1px solid rgba(0, 255, 255, 0.2); border-radius: 12px;
-    background: rgba(10, 15, 25, 0.9);
-    box-shadow: inset 0 0 15px rgba(0, 255, 255, 0.08);
+.screen-shake { animation: screenShake 450ms ease-in-out; }
+@keyframes screenShake {
+    0% { transform: translate(0,0); }
+    20% { transform: translate(-6px, 0); }
+    40% { transform: translate(6px, 0); }
+    60% { transform: translate(-4px, 0); }
+    80% { transform: translate(4px, 0); }
+    100% { transform: translate(0,0); }
 }
-.mob-card {
-    background: linear-gradient(135deg, rgba(35, 45, 60, 0.7), rgba(20, 30, 45, 0.7));
-    border: 1px solid rgba(0, 255, 255, 0.15); border-radius: 10px;
-    padding: 20px; text-align: center; cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
-    position: relative; overflow: hidden;
+
+/* Floor Button Style - Greyscale when disabled */
+.floor-button {
+    background: linear-gradient(180deg, #4a5464 0%, #363c47 100%);
+    border: 1px solid rgba(135, 206, 235, 0.3);
+    border-radius: 8px; color: #e0e0e0;
+    padding: 15px; font-size: 0.9em; cursor: pointer;
+    transition: all 0.2s ease; display: flex; flex-direction: column;
+    align-items: center; gap: 8px; min-height: 80px; justify-content: center;
 }
-.mob-card:hover {
-    transform: translateY(-8px) scale(1.03);
-    box-shadow: 0 12px 30px rgba(0, 255, 255, 0.25);
-    background: linear-gradient(135deg, rgba(45, 55, 70, 0.8), rgba(25, 35, 50, 0.8));
-    border-color: rgba(0, 255, 255, 0.5);
+.floor-button:hover:not(:disabled) {
+    background: linear-gradient(180deg, #5a6474 0%, #464c57 100%);
+    border-color: rgba(135, 206, 235, 0.5); transform: translateY(-2px);
 }
-.mob-card-icon {
-    font-size: 3.2em; margin-bottom: 8px; color: #e0f8ff;
-    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
-}
-.mob-card-name {
-    font-family: 'Exo 2', sans-serif; font-size: 1.5em; color: #00ffff;
-    margin-bottom: 12px; text-shadow: 0 0 6px rgba(0, 255, 255, 0.8);
-    font-weight: 800;
-}
-.mob-card-info {
-    font-size: 0.95em; color: #e0f8ff; margin-bottom: 4px;
-    display: flex; align-items: center; justify-content: center; gap: 5px;
+.floor-button:disabled {
+    background: #1a1e25; border-color: rgba(80, 80, 80, 0.3);
+    color: #555; cursor: default; transform: none; opacity: 0.5; filter: grayscale(100%);
 }
 
 /* Tooltip */
 .tooltip { position: relative; display: inline-block; }
 .tooltip .tooltiptext {
-    visibility: hidden; width: 200px; background-color: rgba(0, 0, 0, 0.8);
-    color: #fff; text-align: center; border-radius: 6px; padding: 5px 0;
+    visibility: hidden; width: 200px; background-color: rgba(0, 0, 0, 0.9);
+    color: #fff; text-align: center; border-radius: 6px; padding: 8px;
     position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -100px;
-    opacity: 0; transition: opacity 0.3s;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+    border: 1px solid #444;
 }
 .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
 
@@ -378,4 +403,5 @@
     .action-btn { width: 70%; max-width: 280px; }
     .combat-arena { flex-direction: column; align-items: center; }
     .combatant-display { width: 90%; }
+    .inventory-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
 }

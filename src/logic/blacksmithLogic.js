@@ -1,7 +1,7 @@
 
 import { Game } from '../state/gameState.js';
 import { blacksmithRecipes, baseItems } from '../data/items.js';
-import { floorData } from '../data/mobs.js';
+import { floorData } from '../data/floors.js';
 import { showNotification } from '../utils/helpers.js';
 import { addItemToInventory, calculateEffectiveStats } from './playerLogic.js';
 import { updatePlayerHUD } from '../ui/hud.js';
@@ -24,6 +24,8 @@ export function renderBlacksmithRecipes() {
         const base = baseItems[recipe.itemId];
         const el = document.createElement('div');
         el.className = `blacksmith-item rarity-${(base.rarity || 'Common').toLowerCase()}`;
+        el.setAttribute('data-rarity', base.rarity || 'Common');
+        
         el.innerHTML = `
             <span class="item-icon">${base.icon}</span>
             <span class="item-name">${base.name}</span>
@@ -42,7 +44,6 @@ function forgeItem(recipeKey) {
         return;
     }
     
-    // Check materials
     for (const [matId, qty] of Object.entries(recipe.materials)) {
         const owned = Game.player.inventory.find(i => i.id === matId)?.count || 0;
         if (owned < qty) {
@@ -51,7 +52,6 @@ function forgeItem(recipeKey) {
         }
     }
     
-    // Consume
     Game.player.col -= recipe.cost;
     for (const [matId, qty] of Object.entries(recipe.materials)) {
         const item = Game.player.inventory.find(i => i.id === matId);
@@ -71,8 +71,6 @@ function forgeItem(recipeKey) {
     renderBlacksmithRecipes();
 }
 
-// --- Upgrade System ---
-
 export function renderUpgradeEquipmentList() {
     const list = document.getElementById('upgrade-equipment-list');
     if (!list) return;
@@ -82,11 +80,9 @@ export function renderUpgradeEquipmentList() {
     document.getElementById('upgrade-preview').innerHTML = "Selecciona un equipo.";
 
     const allItems = [];
-    // Equipment
     Object.values(Game.player.equipment).forEach(item => {
         if(item) allItems.push({item, source: 'equip'});
     });
-    // Inventory
     Game.player.inventory.forEach(item => {
         const base = baseItems[item.id] || item;
         if(['weapon','shield','armor','accessory'].includes(base.type)) {
@@ -96,12 +92,20 @@ export function renderUpgradeEquipmentList() {
 
     allItems.forEach(({item, source}) => {
         const base = baseItems[item.id] || item;
+        const rarity = base.rarity || 'Common';
+        
         const el = document.createElement('div');
-        el.className = `inventory-item rarity-${(base.rarity || 'Common').toLowerCase()}`;
+        el.className = `inventory-item rarity-${rarity.toLowerCase()}`;
+        el.setAttribute('data-rarity', rarity);
+        
+        const rarityColorMap = {'Common': '#b0c4de', 'Rare': '#87ceeb', 'Epic': '#b19cd9', 'Mythic': '#ff4d4d'};
+        const color = rarityColorMap[rarity] || '#b0c4de';
+
         el.innerHTML = `
             <span class="item-icon">${base.icon}</span>
-            <span class="item-name">${base.name}</span>
-            <span style="font-size:0.8em">LV ${item.level || 1}</span>
+            <span class="item-name" style="color:${color}">${base.name}</span>
+            <span class="item-rarity-text" style="color:${color}">${rarity}</span>
+            <span style="font-size:0.8em; color:#fff;">LV ${item.level || 1}</span>
         `;
         el.onclick = () => selectUpgradeItem(item, el);
         list.appendChild(el);
@@ -167,7 +171,7 @@ function confirmUpgrade(item, cost, percent) {
     showNotification("¡Equipo mejorado!", "success");
     calculateEffectiveStats();
     updatePlayerHUD();
-    renderInventory(); // Update stats in inventory view
+    renderInventory(); 
     renderEquipment();
-    renderUpgradeEquipmentList(); // Refresh list
+    renderUpgradeEquipmentList(); 
 }

@@ -3,11 +3,11 @@ import { Game } from './state/gameState.js';
 import { updatePlayerHUD } from './ui/hud.js';
 import { openModal, setupModalListeners, closeModal } from './ui/modals.js';
 import { initCombat, combatAction } from './logic/combatLogic.js';
-import { renderWikiContent, renderPlayerStats } from './ui/renderers.js'; // Added renderPlayerStats import
+import { renderWikiContent, renderPlayerStats } from './ui/renderers.js'; 
 import { setupAdminListeners } from './logic/adminLogic.js';
 import { showNotification } from './utils/helpers.js';
 import { addItemToInventory, calculateEffectiveStats, trainPlayer } from './logic/playerLogic.js';
-import { floorData } from './data/mobs.js';
+import { floorData } from './data/floors.js';
 import { renderUpgradeEquipmentList } from './logic/blacksmithLogic.js';
 
 window.Game = Game;
@@ -65,7 +65,6 @@ function setupEventListeners() {
         if(el) el.addEventListener('click', fn);
     };
 
-    // Toggle Header
     bind('toggle-header-btn', () => {
         document.querySelector('header').classList.toggle('hidden');
         document.getElementById('toggle-header-btn').classList.toggle('header-hidden');
@@ -77,59 +76,92 @@ function setupEventListeners() {
     bind('shop-btn', () => openModal('shopModal'));
     bind('blacksmith-btn', () => openModal('blacksmithMainModal'));
     bind('player-stats-btn', () => {
-        renderPlayerStats(); // Ensure content is generated before opening
+        renderPlayerStats(); 
         openModal('playerStatsModal');
     });
     bind('admin-access-btn', () => openModal('adminKeyModal'));
     
-    // Acciones de Modales
     bind('btn-open-forge', () => openModal('blacksmithForgeModal'));
     bind('btn-open-upgrade', () => {
         openModal('blacksmithUpgradeModal');
         renderUpgradeEquipmentList();
     });
 
-    // Entrenamiento
-    bind('train-skill-btn', () => openModal('trainingModal'));
-    const trainGrid = document.getElementById('training-grid-display');
-    if (trainGrid) {
-        trainGrid.innerHTML = ''; // Clear prev
-        const opt = document.createElement('div');
-        opt.className = 'training-option';
-        opt.innerHTML = `<span class="item-icon">💪</span><span class="item-name">Entrenamiento Físico</span><span class="training-stats-gain">Mejora ATK/HP/MP</span>`;
-        opt.onclick = () => trainPlayer();
-        trainGrid.appendChild(opt);
-    }
+    bind('train-skill-btn', () => {
+        openModal('trainingModal');
+        const trainGrid = document.getElementById('training-grid-display');
+        if (trainGrid) {
+            trainGrid.innerHTML = ''; 
+            const cost = 50 * Game.player.level;
+            
+            const opt = document.createElement('div');
+            opt.className = 'training-option'; // Uses grey card CSS
+            opt.innerHTML = `
+                <span class="item-icon">💪</span>
+                <span class="item-name">Entrenamiento Físico</span>
+                <span class="training-stats-gain">Mejora ATK/HP/MP</span>
+                <span class="item-price">Costo: ${cost} Col</span>
+            `;
+            opt.onclick = () => trainPlayer();
+            trainGrid.appendChild(opt);
+            
+            document.getElementById('training-player-col').textContent = Game.player.col;
+            document.getElementById('training-stats-preview').innerHTML = `
+                <li>ATK: +1</li>
+                <li>DEF: +0-2</li>
+                <li>HP: +5</li>
+                <li>MP: +2</li>
+                <li>Costo: ${cost} Col</li>
+            `;
+        }
+    });
 
-    // Combate
     bind('combat-action-attack', () => combatAction('attack'));
     bind('combat-action-flee', () => combatAction('flee'));
     
-    // Navegación
+    // Floor Nav - Show all 100, grey locked
     bind('floor-navigate-btn', () => {
         const grid = document.getElementById('floor-select-grid');
         grid.innerHTML = '';
-        Game.player.unlockedFloors.forEach(fNum => {
+        
+        // Show up to floor 100 (or max defined in data)
+        const maxFloor = 100;
+        
+        for(let i=1; i<=maxFloor; i++) {
+            const fNum = i;
+            const isUnlocked = Game.player.unlockedFloors.includes(fNum);
+            const floorInfo = floorData[fNum];
+            
             const btn = document.createElement('button');
-            btn.className = 'action-btn';
-            btn.textContent = `Piso ${fNum}: ${floorData[fNum]?.name || 'Piso ' + fNum}`;
-            btn.onclick = () => {
-                Game.player.currentFloor = fNum;
-                updatePlayerHUD();
-                closeModal('floorNavigationModal');
-                showNotification(`Viajaste al Piso ${fNum}`);
-            };
+            btn.className = 'floor-button'; 
+            btn.disabled = !isUnlocked;
+            
+            // If floor data exists show name, else ???
+            const fName = (floorInfo && isUnlocked) ? floorInfo.name : '???';
+            
+            btn.innerHTML = `
+                <span class="floor-name">Piso ${fNum}</span>
+                <span class="floor-description">${fName}</span>
+            `;
+            
+            if (isUnlocked && floorInfo) {
+                btn.onclick = () => {
+                    Game.player.currentFloor = fNum;
+                    updatePlayerHUD();
+                    closeModal('floorNavigationModal');
+                    showNotification(`Viajaste al Piso ${fNum}`);
+                };
+            }
             grid.appendChild(btn);
-        });
+        }
         openModal('floorNavigationModal');
     });
 
-    // Guardado
     bind('save-game-btn', () => {
         localStorage.setItem('sao_save', JSON.stringify(Game.player));
         showNotification("Partida guardada.", "success");
     });
-    bind('load-game-btn', () => { // Fixed ID from previous index.html assumption
+    bind('load-game-btn', () => { 
         location.reload();
     });
     bind('new-game-btn', () => {
