@@ -1,5 +1,5 @@
 
-/* style-wiki.css - Restauración Visual */
+/* style-wiki.css */
 
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
@@ -37,33 +37,45 @@ header .container {
 
 /* Nav */
 .nav-links { display: flex; align-items: center; }
-.nav-links a {
+.nav-link {
     color: #c0c0e0; margin-left: 20px; text-decoration: none;
     font-size: 1rem; padding: 8px 12px; border-radius: 5px;
     transition: background-color 0.3s, color 0.3s;
 }
-.nav-links a:hover, .nav-links a.active {
+.nav-link:hover, .nav-link.active {
     background-color: rgba(74, 144, 226, 0.2); color: #87ceeb;
 }
 
-/* Botones Sistema (Música/Login) con Animación de Respiración */
+/* Botones Sistema (Música/Login) */
 .nav-system-btn {
-    background-color: transparent; border: 1px solid #87ceeb; color: #87ceeb;
-    padding: 10px 18px; margin-left: 20px; border-radius: 5px; cursor: pointer;
-    font-size: 0.95rem; font-weight: 700; overflow: hidden; position: relative;
-    box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
-    animation: breatheGlow 3s infinite alternate ease-in-out;
+    position: relative;
+    background-color: transparent;
+    border: 1px solid #87ceeb;
+    color: #87ceeb;
+    padding: 10px 18px; margin-left: 20px;
+    border-radius: 5px; cursor: pointer;
+    font-size: 0.95rem; font-family: 'Rajdhani', sans-serif; font-weight: 700;
+    overflow: hidden; z-index: 1;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.2), 0 0 5px rgba(0, 255, 255, 0.1);
     transition: all 0.3s ease;
+    animation: breatheGlow 3s infinite alternate ease-in-out;
 }
-@keyframes breatheGlow {
-    0% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); }
-    100% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.6); }
+.nav-system-btn::before {
+    content: ''; position: absolute; top: 0; left: -150%; width: 200%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.6), transparent);
+    transition: transform 0.5s; transform: translateX(0); z-index: -1;
 }
+.nav-system-btn:hover::before { transform: translateX(100%); }
 .nav-system-btn:hover {
     color: #ffffff; border-color: #ffffff;
     box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
     filter: brightness(1.5);
     animation: none;
+}
+
+@keyframes breatheGlow {
+    0% { box-shadow: 0 0 10px rgba(0, 255, 255, 0.2); }
+    100% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.6); }
 }
 
 /* Toggle Header */
@@ -87,7 +99,6 @@ header .container {
 }
 .hero-content { z-index: 2; position: relative; padding: 2rem; animation: fadeInUp 1s ease-out; }
 
-/* H1 Specific Glow Animation Override */
 .hero h1 {
     font-size: 4.8rem; margin-bottom: 1rem; text-shadow: 3px 3px 8px rgba(0,0,0,0.8);
     background: linear-gradient(45deg, #87CEEB, #ADD8E6, #FFFFFF);
@@ -131,6 +142,12 @@ header .container {
     border-radius: 15px; padding: 2rem; text-align: center; transition: all 0.4s ease; cursor: pointer;
     position: relative; overflow: hidden;
 }
+.card::before {
+    content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(135, 206, 235, 0.1), transparent);
+    transition: left 0.7s;
+}
+.card:hover::before { left: 100%; }
 .card:hover {
     transform: translateY(-10px) scale(1.03);
     box-shadow: 0 20px 40px rgba(74, 144, 226, 0.25);
@@ -145,6 +162,11 @@ header .container {
 .card-name { font-size: 1.6rem; font-weight: bold; color: #a1d8ff; margin-bottom: 0.7rem; }
 .card-subtitle { opacity: 0.8; margin-bottom: 1rem; font-style: italic; font-size: 0.95rem; color: #90a0c0; }
 .card-description { line-height: 1.65; opacity: 0.9; font-size: 0.95rem; color: #c0c0d0; text-align: left; }
+.weapon-stats { 
+    display: flex; justify-content: space-around; margin-top: 1.5rem; font-size: 0.9rem;
+    background: rgba(10,10,18,0.3); padding: 0.7rem; border-radius: 8px;
+}
+.weapon-stats span { opacity: 0.9; color: #b0c4de; }
 
 /* Partículas */
 .floating-particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1; overflow: hidden; }

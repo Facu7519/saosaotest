@@ -3,7 +3,7 @@ import { Game } from '../state/gameState.js';
 import { baseItems } from '../data/items.js';
 import { genUid, showNotification } from '../utils/helpers.js';
 import { updatePlayerHUD } from '../ui/hud.js';
-import { passiveSkillData } from '../data/skills.js';
+import { skillData, passiveSkillData } from '../data/skills.js';
 
 export function calculateEffectiveStats() {
     const p = Game.player;
@@ -82,6 +82,15 @@ function levelUp() {
     calculateEffectiveStats();
     showNotification(`¡LEVEL UP! Nivel ${p.level}`, "success", 6000);
     
+    // Unlock Active Skills
+    Object.entries(skillData).forEach(([id, data]) => {
+        if (data.levelReq === p.level && !p.skills.find(s => s.id === id)) {
+            p.skills.push({ id, ...data });
+            showNotification(`Nueva habilidad: ${data.name}`, "success");
+        }
+    });
+
+    // Unlock Passive Skills
     Object.entries(passiveSkillData).forEach(([id, data]) => {
         if (data.levelReq === p.level && !p.passiveSkills.find(s => s.id === id)) {
             p.passiveSkills.push({ id, ...data });
@@ -92,6 +101,8 @@ function levelUp() {
 
 export function addItemToInventory(itemData, quantity = 1) {
     const base = baseItems[itemData.id];
+    if(!base) return;
+    
     const stackable = base.type === 'consumable' || base.type === 'material';
     
     if (stackable) {

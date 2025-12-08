@@ -1,26 +1,66 @@
 
 import { showNotification } from '../utils/helpers.js';
 import { Game } from '../state/gameState.js';
-import { skillData, passiveSkillData } from '../data/skills.js';
+import { wikiCharacterData, wikiWeaponData, wikiFloorsData, wikiGuildsData } from '../data/wiki.js';
 
 // Wiki Content
 export function renderWikiContent() {
     const charGrid = document.getElementById('characters-grid-display');
-    if(charGrid) charGrid.innerHTML = `
-        <div class="card"><div class="card-avatar">⚫</div><h3 class="card-name">Kirito</h3><p>El Espadachín Negro.</p></div>
-        <div class="card"><div class="card-avatar">✨</div><h3 class="card-name">Asuna</h3><p>Destello Veloz.</p></div>
-        <div class="card"><div class="card-avatar">🔥</div><h3 class="card-name">Klein</h3><p>Líder de Fuurinkazan.</p></div>
-    `;
-    
-    document.querySelectorAll('.card').forEach(c => {
-        c.addEventListener('click', () => {
-             document.getElementById('modal-body-content').innerHTML = `<h2>${c.querySelector('h3').textContent}</h2><p>Información detallada...</p>`;
-             document.getElementById('infoModal').style.display = 'block';
-        });
-    });
+    const weaponGrid = document.getElementById('weapons-grid-display');
+    const floorInfo = document.getElementById('floors-info-container');
+    const guildInfo = document.getElementById('guilds-info-container');
+
+    if (charGrid) renderCardGrid(charGrid, wikiCharacterData, 'character');
+    if (weaponGrid) renderCardGrid(weaponGrid, wikiWeaponData, 'weapon');
+    if (floorInfo) renderCardGrid(floorInfo, wikiFloorsData, 'floor');
+    if (guildInfo) renderCardGrid(guildInfo, wikiGuildsData, 'guild');
 }
 
-// Stats Modal - Exact Layout Restoration
+function renderCardGrid(container, dataObj, type) {
+    container.innerHTML = '';
+    
+    // Add intro text for floors/guilds if needed
+    if (type === 'floor') {
+        container.innerHTML = `<p style="text-align:center; margin-bottom:2rem; width:100%;">Explora los diversos y peligrosos pisos del castillo flotante.</p>`;
+    }
+
+    const gridDiv = document.createElement('div');
+    gridDiv.className = 'card-grid';
+
+    Object.entries(dataObj).forEach(([key, data]) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.setAttribute('role', 'button');
+        card.tabIndex = 0;
+
+        card.innerHTML = `
+            <div class="${type === 'weapon' || type === 'floor' || type === 'guild' ? 'card-icon' : 'card-avatar'}">${data.icon}</div>
+            <h3 class="card-name">${data.name}</h3>
+            ${data.role ? `<p class="card-subtitle">${data.role}</p>` : ''}
+            ${data.type ? `<p class="card-subtitle">${data.type}</p>` : ''}
+            ${data.stats ? `<div class="weapon-stats"><span>${data.stats}</span></div>` : ''}
+            <p class="card-description">${data.description}</p>
+        `;
+
+        card.addEventListener('click', () => {
+            const content = document.getElementById('modal-body-content');
+            content.innerHTML = `
+                <span class="modal-icon">${data.icon}</span>
+                <h2>${data.name}</h2>
+                <p style="margin-bottom:1rem;">${data.description}</p>
+                ${data.fullInfo ? `<p><strong>Detalles:</strong> ${data.fullInfo}</p>` : ''}
+                ${data.details ? `<p><strong>Detalles:</strong> ${data.details}</p>` : ''}
+            `;
+            document.getElementById('infoModal').style.display = 'block';
+        });
+
+        gridDiv.appendChild(card);
+    });
+    
+    container.appendChild(gridDiv);
+}
+
+// Stats Modal
 export function renderPlayerStats() {
     const container = document.getElementById('stats-content-container');
     const p = Game.player;

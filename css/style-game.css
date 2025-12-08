@@ -1,5 +1,5 @@
 
-/* style-game.css - Restauración Total "Ideal" */
+/* style-game.css */
 
 /* --- Panel Interactivo Principal --- */
 .interactive-panel {
@@ -27,40 +27,23 @@
 
 /* --- SAO Player HUD --- */
 .sao-player-hud {
-    display: flex;
-    align-items: center;
-    background-color: #2a2d3a;
-    border: 2px solid #4a4f66;
-    border-radius: 8px;
-    padding: 8px 12px;
-    max-width: 550px;
-    margin: 0 auto 2rem auto;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.4);
-    position: relative;
+    display: flex; align-items: center;
+    background-color: #2a2d3a; border: 2px solid #4a4f66;
+    border-radius: 8px; padding: 8px 12px;
+    max-width: 550px; margin: 0 auto 2rem auto;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.4); position: relative;
 }
 .sao-player-hud::before {
-    content: '+';
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 35px;
-    height: 35px;
-    background-color: #4a4f66;
-    color: #e0e0e0;
-    font-size: 1.5rem;
-    font-weight: bold;
-    border-radius: 4px 0 0 4px;
-    margin-right: 10px;
-    border-right: 1px solid #333;
+    content: '+'; display: flex; align-items: center; justify-content: center;
+    width: 35px; height: 35px; background-color: #4a4f66; color: #e0e0e0;
+    font-size: 1.5rem; font-weight: bold; border-radius: 4px 0 0 4px;
+    margin-right: 10px; border-right: 1px solid #333;
 }
 .sao-hud-info { flex-grow: 1; text-align: left; }
-.sao-player-name {
-    color: #e0e0e0; font-size: 1.1rem; font-weight: bold; margin-bottom: 4px;
-}
+.sao-player-name { color: #e0e0e0; font-size: 1.1rem; font-weight: bold; margin-bottom: 4px; }
 .sao-hp-bar-container {
     width: 100%; height: 20px; background-color: #1e1f26;
-    border-radius: 4px; overflow: hidden; border: 1px solid #4a4f66;
-    position: relative;
+    border-radius: 4px; overflow: hidden; border: 1px solid #4a4f66; position: relative;
 }
 .sao-hp-bar-fill {
     height: 100%; background: linear-gradient(to right, #5cb85c, #4cae4c);
@@ -81,8 +64,7 @@
 .resource-bar-container {
     width: 70%; max-width: 400px; height: 18px;
     background: rgba(10, 10, 18, 0.5); border-radius: 9px;
-    overflow: hidden; margin: 1rem auto;
-    border: 1px solid rgba(70, 130, 180, 0.3); position: relative;
+    overflow: hidden; margin: 1rem auto; border: 1px solid rgba(70, 130, 180, 0.3);
 }
 .resource-bar-fill {
     height: 100%; border-radius: 8px; transition: width 0.5s ease-in-out;
@@ -121,17 +103,9 @@
     background: linear-gradient(180deg, #f0ad4e 0%, #eea236 100%);
     border-bottom-color: #d58512;
 }
-.action-btn.shop-btn:hover {
-     background: linear-gradient(180deg, #f5c062 0%, #f0b14e 100%);
-     box-shadow: 0 5px 12px rgba(240, 173, 78, 0.3), inset 0 -1px 0 rgba(0,0,0,0.1);
-}
 .action-btn.blacksmith-btn {
     background: linear-gradient(180deg, #778899 0%, #708090 100%);
     border-bottom-color: #5a6873;
-}
-.action-btn.blacksmith-btn:hover {
-     background: linear-gradient(180deg, #8d9aa6 0%, #8090a0 100%);
-     box-shadow: 0 5px 12px rgba(112, 128, 144, 0.3), inset 0 -1px 0 rgba(0,0,0,0.1);
 }
 .action-btn:disabled {
     opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; border-bottom: none;
@@ -187,7 +161,7 @@
     to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* --- Grids e Ítems (THE KEY PART) --- */
+/* --- Grids e Ítems --- */
 .inventory-sections, .shop-sections, .blacksmith-sections, .training-sections {
     display: flex; gap: 2rem; margin-top: 1rem;
 }
@@ -196,7 +170,7 @@
 }
 .player-equipment-container, .blacksmith-materials-info, .training-details-container { flex: 1; }
 
-.inventory-grid, .shop-grid, .blacksmith-grid, .training-grid {
+.inventory-grid, .shop-grid, .blacksmith-grid, .training-grid, .mob-list-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     gap: 12px; border: 1px solid rgba(70, 130, 180, 0.25);
     padding: 15px; border-radius: 10px; max-height: 480px;
@@ -204,17 +178,17 @@
     align-content: start; justify-content: center;
 }
 
-/* High-Quality Detailed Item Card */
-.inventory-item, .shop-item, .blacksmith-item, .training-option {
+/* Item Card */
+.inventory-item, .shop-item, .blacksmith-item, .training-option, .mob-card {
     background: rgba(45, 50, 75, 0.6);
     border: 2px solid rgba(70, 130, 180, 0.4);
     border-radius: 8px; padding: 10px; text-align: center;
     font-size: 0.85em; cursor: pointer; transition: all 0.2s ease;
     position: relative; user-select: none;
     display: flex; flex-direction: column; align-items: center;
-    justify-content: flex-start; min-height: 220px; /* Taller for details */
+    justify-content: flex-start; min-height: 220px;
 }
-.inventory-item:hover, .shop-item:hover, .blacksmith-item:hover, .training-option:hover {
+.inventory-item:hover, .shop-item:hover, .blacksmith-item:hover, .training-option:hover, .mob-card:hover {
     transform: translateY(-6px) scale(1.02);
     box-shadow: 0 14px 34px rgba(135, 206, 235, 0.22);
     border-color: #87CEEB;
@@ -230,21 +204,17 @@
 }
 div.shop-item.rarity-common.common::after { display: none !important; }
 
-/* Iconos y Texto de Ítems */
-.item-icon {
+.item-icon, .mob-card-icon {
     font-size: 3rem; display: flex; align-items: center; justify-content: center;
     margin-bottom: 8px; color: #e0e0e0; width: 56px; height: 56px;
     background: rgba(0,0,0,0.2); border-radius: 8px;
 }
-.item-name {
+.item-name, .mob-card-name {
     font-weight: 700; margin-bottom: 6px; font-size: 13px; color: #b0c4de;
     width: 100%; line-height: 1.2; word-break: break-word; min-height: 32px;
     display: flex; align-items: center; justify-content: center;
 }
-.item-rarity-text { /* Displayed inside the card as well */
-    font-weight: 700; margin-top: 4px; font-size: 0.9em;
-}
-.item-details, .item-level-req, .training-stats-gain {
+.item-details, .item-level-req, .training-stats-gain, .mob-card-info {
     font-size: 0.75em; color: #a0b0d0; margin-top: 4px;
     line-height: 1.3;
 }
@@ -267,16 +237,6 @@ div.shop-item.rarity-common.common::after { display: none !important; }
 
 .inventory-item[data-rarity="Mythic"] .item-name { color: #ff4d4d; text-shadow: 0 0 8px rgba(255,77,77,0.7); }
 
-/* --- Training specific "Grey Card" --- */
-.training-option {
-    min-height: 200px;
-    background: rgba(30, 35, 45, 0.8);
-    border: 2px solid rgba(255, 255, 255, 0.1);
-}
-.training-stats-gain {
-    display: block; margin-top: 10px; color: #ccc;
-}
-
 /* --- Stats Modal --- */
 .stats-category { margin-bottom: 1.5rem; }
 .stats-category h3 {
@@ -289,6 +249,32 @@ div.shop-item.rarity-common.common::after { display: none !important; }
 }
 .stat-line .stat-label { color: #b0c4de; }
 .stat-line .stat-value { color: #e0e0e0; font-weight: bold; }
+
+/* --- Admin Panel --- */
+.admin-sections-container { display: flex; flex-wrap: wrap; gap: 20px; }
+.admin-section {
+    flex: 1 1 300px; background: rgba(25, 28, 40, 0.8);
+    padding: 20px; border-radius: 10px; border: 1px solid rgba(70, 130, 180, 0.3);
+}
+.admin-section h3 { color: #a1d8ff; margin-bottom: 15px; }
+.admin-section input {
+    background-color: #2a2d3a; color: #e0e0e0; border: 1px solid #4a4f66;
+    border-radius: 4px; padding: 6px 8px; margin-right: 5px; margin-bottom: 10px; width: 80px;
+}
+#adminPanelMessage {
+    margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.5); 
+    border-radius: 5px; color: #5cb85c; text-align: center;
+}
+
+/* Input Names Modal */
+#playerNameInput, #adminKeyValue {
+    width: calc(100% - 20px); padding: 12px; margin: 1rem auto;
+    border-radius: 8px; border: 1px solid rgba(70, 130, 180, 0.5);
+    background-color: rgba(10,10,18,0.7); color: #e0e0e0; font-size: 1.1rem; display: block;
+}
+#playerNameInput:focus, #adminKeyValue:focus {
+    outline: none; border-color: #87CEEB; box-shadow: 0 0 8px rgba(135, 206, 235, 0.5);
+}
 
 /* --- Combate --- */
 .combat-arena {
@@ -324,7 +310,6 @@ div.shop-item.rarity-common.common::after { display: none !important; }
     display: flex; align-items: center; justify-content: center;
     color: white; font-size: 0.8rem; text-shadow: 0 1px 2px rgba(0,0,0,0.8);
 }
-#combat-enemy-hp-bar-fill { background: linear-gradient(to right, #d9534f, #c9302c); }
 #combat-enemy-hp-bar-fill.low { background: linear-gradient(to right, #ffc107, #f0ad4e); }
 #combat-enemy-hp-bar-fill.critical { background: linear-gradient(to right, #d9534f, #c9302c); }
 
@@ -333,6 +318,10 @@ div.shop-item.rarity-common.common::after { display: none !important; }
     height: 150px; overflow-y: auto; font-size: 0.9rem; color: #c0d0e0;
     border: 1px solid rgba(70,130,180,0.2);
 }
+.combat-log p { margin-bottom: 4px; }
+.combat-log .player-action { color: #87CEEB; }
+.combat-log .enemy-action { color: #FF7F7F; }
+.combat-log .system-message { color: #FFD700; font-style: italic; }
 
 /* Floating Text */
 .floating-text {
@@ -369,7 +358,7 @@ div.shop-item.rarity-common.common::after { display: none !important; }
     100% { transform: translate(0,0); }
 }
 
-/* Floor Button Style - Greyscale when disabled */
+/* Floor Button */
 .floor-button {
     background: linear-gradient(180deg, #4a5464 0%, #363c47 100%);
     border: 1px solid rgba(135, 206, 235, 0.3);
@@ -387,16 +376,9 @@ div.shop-item.rarity-common.common::after { display: none !important; }
     color: #555; cursor: default; transform: none; opacity: 0.5; filter: grayscale(100%);
 }
 
-/* Tooltip */
-.tooltip { position: relative; display: inline-block; }
-.tooltip .tooltiptext {
-    visibility: hidden; width: 200px; background-color: rgba(0, 0, 0, 0.9);
-    color: #fff; text-align: center; border-radius: 6px; padding: 8px;
-    position: absolute; z-index: 1; bottom: 125%; left: 50%; margin-left: -100px;
-    opacity: 0; transition: opacity 0.3s; pointer-events: none;
-    border: 1px solid #444;
+.skills-list, .potions-list {
+    display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 15px;
 }
-.tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
 
 @media (max-width: 768px) {
     .action-buttons { flex-direction: column; align-items: center; }
