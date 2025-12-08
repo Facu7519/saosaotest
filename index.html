@@ -1,0 +1,331 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sword Art Online: Aincrad Chronicles</title>
+    
+    <!-- CSS Correcto -->
+    <link rel="stylesheet" href="css/style-wiki.css">
+    <link rel="stylesheet" href="css/style-game.css">
+    <link rel="stylesheet" href="css/custom-scroll.css">
+    
+    <!-- Fuentes e Iconos -->
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@600;800&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Estilos Críticos para el Overlay de Error -->
+    <style>
+        #server-error-overlay {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 9999;
+            color: #ff6b6b; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center; font-family: sans-serif; padding: 20px;
+        }
+        #server-error-overlay h1 { font-size: 2.5rem; margin-bottom: 1rem; }
+        #server-error-overlay p { font-size: 1.2rem; max-width: 600px; line-height: 1.6; color: #ddd; }
+        #server-error-overlay code { background: #333; padding: 4px 8px; border-radius: 4px; color: #87ceeb; }
+    </style>
+</head>
+
+<body>
+    <!-- Overlay de Error de Protocolo -->
+    <div id="server-error-overlay">
+        <h1>⚠️ Error de Ejecución</h1>
+        <p>Estás intentando ejecutar el juego directamente desde el archivo (Protocolo <code>file://</code>).</p>
+        <p>La arquitectura moderna de Módulos ES6 requiere un <strong>Servidor Web Local</strong> por seguridad del navegador (CORS).</p>
+        <br>
+        <p><strong>Solución:</strong></p>
+        <p>1. Instala la extensión "Live Server" en VS Code y usa "Open with Live Server".</p>
+        <p>2. O ejecuta <code>python -m http.server</code> en esta carpeta.</p>
+    </div>
+
+    <!-- Script de Detección -->
+    <script>
+        if (window.location.protocol === 'file:') {
+            document.getElementById('server-error-overlay').style.display = 'flex';
+            console.error("DETENIDO: Los módulos ES6 no funcionan en protocolo file:// debido a políticas CORS.");
+        }
+    </script>
+
+    <button id="toggle-header-btn" aria-label="Ocultar/Mostrar encabezado">
+        <i class="fas fa-arrow-up"></i> 
+    </button>
+
+    <audio id="background-music" loop src="sao_theme.mp3"></audio>
+
+    <div class="floating-particles" id="particles"></div>
+    <div id="notification-area"></div>
+
+    <header>
+        <nav class="container"> 
+            <a href="#top" class="logo-link"> <div class="logo">⚔️ AINCRAD</div></a>
+            <div class="nav-links">
+                <a href="#wiki-personajes" class="nav-link">Personajes</a>
+                <a href="#wiki-arsenal" class="nav-link">Arsenal</a>
+                <a href="#wiki-pisos" class="nav-link">Pisos</a>
+                <a href="#wiki-gremios" class="nav-link">Gremios</a>
+                <a href="#game-panel" class="nav-link">Juego</a>
+                <button id="music-toggle-btn" class="nav-system-btn">🔊 Música</button>
+                <button id="login-btn" class="nav-system-btn">👤 Login</button>
+            </div>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1>SWORD ART ONLINE</h1>
+            <p class="hero-subtitle">Link Start! Adéntrate en el castillo flotante de Aincrad.</p>
+            <div class="hero-stats">
+                <div class="stat-item"><span class="stat-number">10,000</span><span class="stat-label">Atrapados</span></div>
+                <div class="stat-item"><span class="stat-number">100</span><span class="stat-label">Pisos</span></div>
+                <div class="stat-item"><span class="stat-number">2022</span><span class="stat-label">Inicio</span></div>
+            </div>
+        </div>
+    </section>
+
+    <main class="main-content container">
+        <section id="game-panel" class="interactive-panel">
+            <h2 class="panel-title">Tu Aventura en Aincrad</h2>
+            <div class="floor-display">Piso: <span id="current-floor">1</span> - <span id="floor-name">Bosque del Inicio</span></div>
+
+            <div class="sao-player-hud">
+                <div class="sao-hud-info">
+                    <div class="sao-player-name" id="sao-player-name-display">Jugador</div>
+                    <div class="sao-hp-bar-container">
+                        <div class="sao-hp-bar-fill" id="sao-hp-bar"></div>
+                    </div>
+                </div>
+                <div class="sao-hud-stats">
+                    <div class="sao-hp-text"><span id="player-hp-current">100</span>/<span id="player-hp-max">100</span></div>
+                    <div class="sao-player-level">LV: <span id="player-level">1</span></div>
+                </div>
+                <div class="status-effects-display" id="player-status-effects-display"></div>
+            </div>
+            
+            <div class="resource-label">MP: <span id="player-mp-current">50</span>/<span id="player-mp-max">50</span></div>
+            <div class="resource-bar-container">
+                <div class="resource-bar-fill" id="mp-bar-fill" style="width: 100%"></div>
+            </div>
+
+            <div class="resource-label">EXP: <span id="current-exp">0</span> / <span id="needed-exp">100</span></div>
+            <div class="resource-bar-container">
+                <div class="resource-bar-fill" id="exp-bar-fill" style="width: 0%"></div>
+            </div>
+            
+            <div class="col-display">Col: <span id="player-col">0</span> 💰</div>
+            
+            <div class="action-buttons">
+                <button class="action-btn" id="combat-btn">🗡️ Combatir</button>
+                <button class="action-btn" id="boss-combat-btn">👹 Jefe del Piso</button>
+                <button class="action-btn" id="train-skill-btn">⚔️ Entrenar (<span id="train-cost-display">50</span>) Col</button>
+                <button class="action-btn" id="inventory-btn">🎒 Inventario</button> 
+                <button class="action-btn shop-btn" id="shop-btn">🛒 Tienda</button>
+                <button class="action-btn blacksmith-btn" id="blacksmith-btn">🛠️ Herrería</button>
+                <button class="action-btn" id="player-stats-btn">📊 Mis Stats</button>
+                <button class="action-btn" id="floor-navigate-btn">🗺️ Desplazarse entre Pisos</button>
+                <button class="action-btn" id="admin-access-btn">🔑 Admin</button>
+                <button class="action-btn" id="save-game-btn">💾 Guardar</button>
+                <button class="action-btn" id="load-game-btn">📂 Cargar</button>
+                <button class="action-btn" id="new-game-btn">🔄 Nuevo Juego</button>
+            </div>
+        </section>
+
+        <!-- Wiki Sections -->
+        <section id="wiki-personajes" class="section">
+            <h2 class="section-title">Personajes Clave</h2>
+            <div class="card-grid" id="characters-grid-display"></div>
+        </section>
+
+        <section id="wiki-arsenal" class="section">
+            <h2 class="section-title">Arsenal Legendario</h2>
+            <div class="card-grid" id="weapons-grid-display"></div>
+        </section>
+        
+        <section id="wiki-pisos" class="section">
+            <h2 class="section-title">Pisos de Aincrad</h2>
+            <div id="floors-info-container"></div>
+        </section>
+
+        <section id="wiki-gremios" class="section">
+            <h2 class="section-title">Gremios Notables</h2>
+            <div id="guilds-info-container"></div>
+        </section>
+    </main>
+
+    <!-- Modals -->
+    <div id="infoModal" class="modal"><div class="modal-content"><span class="close-modal-btn" data-target="infoModal">&times;</span><div id="modal-body-content"></div></div></div>
+    
+    <div id="inventoryModal" class="modal">
+        <div class="modal-content large inventory-content">
+            <span class="close-modal-btn" data-target="inventoryModal">&times;</span>
+            <h2>🎒 Tu Inventario</h2>
+            <div class="inventory-sections">
+                <div class="inventory-grid-container"><h3>Objetos</h3><div class="inventory-grid" id="inventory-grid-display"></div></div>
+                <div class="player-equipment-container">
+                    <div class="player-equipment"><h3>🛡️ Equipo Actual</h3><div class="equipment-slots">
+                        <div class="equipment-slot" id="equip-weapon" data-slot="weapon"></div>
+                        <div class="equipment-slot" id="equip-shield" data-slot="shield"></div>
+                        <div class="equipment-slot" id="equip-armor" data-slot="armor"></div>
+                        <div class="equipment-slot" id="equip-accessory" data-slot="accessory"></div>
+                    </div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Blacksmith Modals -->
+    <div id="blacksmithMainModal" class="modal">
+        <div class="modal-content large blacksmith-main">
+            <span class="close-modal-btn" data-target="blacksmithMainModal">&times;</span>
+            <h2 style="text-align:center;">🛠️ Herrería - Selecciona una opción</h2>
+            <div class="blacksmith-main-grid">
+                <button class="bs-option" id="btn-open-forge">🔨 Forjar</button>
+                <button class="bs-option" id="btn-open-upgrade">⬆️ Mejorar Equipamiento</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="blacksmithForgeModal" class="modal">
+        <div class="modal-content large blacksmith-forge">
+            <span class="close-modal-btn" data-target="blacksmithForgeModal">&times;</span>
+            <h2>🔨 Forjar</h2>
+            <p style="text-align:center;">Selecciona una receta para forjar un ítem.</p>
+            <div id="forge-recipes-grid" class="blacksmith-actions-grid"></div>
+        </div>
+    </div>
+
+    <div id="blacksmithUpgradeModal" class="modal">
+        <div class="modal-content large blacksmith-upgrade">
+            <span class="close-modal-btn" data-target="blacksmithUpgradeModal">&times;</span>
+            <h2>⚒️ Mejorar Equipamiento</h2>
+            <div style="display:flex; gap:1rem;">
+                <div style="flex:1;"><h3>Tus Equipos</h3><div id="upgrade-equipment-list" class="inventory-grid"></div></div>
+                <div style="flex:1;">
+                    <h3>Previsualización</h3>
+                    <div id="upgrade-preview" style="padding:1rem; background:#07101a; border-radius:8px; min-height:160px;">Selecciona un equipo.</div>
+                    <div style="margin-top:1rem; text-align:center;">
+                        <button id="confirm-upgrade-btn" class="action-btn" disabled>Mejorar (Col: <span id="upgrade-cost">0</span>)</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="shopModal" class="modal">
+        <div class="modal-content large shop-content">
+            <span class="close-modal-btn" data-target="shopModal">&times;</span>
+            <h2>🛒 Tienda del Piso <span id="shop-floor-number">1</span></h2>
+            <p style="text-align:center; margin-bottom:1rem;">Tu Saldo: <span id="shop-player-col" style="color:#FFD700; font-weight:bold;">0</span> Col</p>
+            <div class="shop-items-container"><h3>Artículos Disponibles</h3><div class="shop-grid" id="shop-grid-display"></div></div>
+        </div>
+    </div>
+
+    <div id="playerStatsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal-btn" data-target="playerStatsModal">&times;</span>
+            <h2>📊 Estadísticas de <span id="stats-player-name">Jugador</span></h2>
+            <div id="stats-content-container"></div>
+        </div>
+    </div>
+
+    <div id="combatModal" class="modal">
+        <div class="modal-content xlarge">
+            <h2 id="combat-title">¡Combate!</h2>
+            <div class="combat-arena">
+                <div class="combatant-display" id="combat-player-display">
+                    <h3 id="combat-player-name">Jugador</h3>
+                    <div class="combatant-icon"><img src="https://1.bp.blogspot.com/-nbJQwJhSNUA/UXusEdjyxxI/AAAAAAAAACg/HDkAnGAH3s0/s1600/sao_ep9_dualwield_kirito_oa.png" alt="Jugador"></div>
+                    <div class="combat-hp-bar-container"><div class="combat-hp-bar-fill" id="combat-player-hp-bar"></div></div>
+                    <div class="combat-hp-text">HP: <span id="combat-player-hp-current"></span>/<span id="combat-player-hp-max"></span></div>
+                    <div class="status-effects-display" id="combat-player-status-effects-display"></div>
+                </div>
+                <div class="combatant-display" id="combat-enemy-display">
+                    <h3 id="combat-enemy-name">Enemigo</h3>
+                    <div class="combatant-icon" id="combat-enemy-icon">❓</div>
+                    <div class="combat-hp-bar-container"><div class="combat-hp-bar-fill" id="combat-enemy-hp-bar-fill"></div></div>
+                    <div class="combat-hp-text">HP: <span id="combat-enemy-hp-current"></span>/<span id="combat-enemy-hp-max"></span></div>
+                    <div class="status-effects-display" id="combat-enemy-status-effects-display"></div>
+                </div>
+            </div>
+            <div class="combat-actions">
+                <button class="action-btn" id="combat-action-attack">🗡️ Atacar</button>
+                <button class="action-btn" id="combat-action-skills">✨ Habilidades</button>
+                <button class="action-btn" id="combat-action-potions">🧪 Pociones</button>
+                <button class="action-btn" id="combat-action-flee" style="background: linear-gradient(180deg, #ffc107, #f0ad4e);">🏃 Huir</button>
+            </div>
+            <div id="combat-skills-list-container" class="skills-list" style="display:none;"></div>
+            <div id="combat-potions-list-container" class="potions-list" style="display:none;"></div>
+            <div class="combat-log" id="combat-log-display"><p class="system-message">Esperando acción...</p></div>
+        </div>
+    </div>
+
+    <div id="nameEntryModal" class="modal">
+        <div class="modal-content">
+            <h2>Elige el Nombre de tu Personaje</h2>
+            <input type="text" id="playerNameInput" maxlength="15" placeholder="Tu Nombre Aquí">
+            <button class="action-btn" id="submitPlayerNameBtn">Confirmar Nombre</button>
+        </div>
+    </div>
+
+    <div id="floorNavigationModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal-btn" data-target="floorNavigationModal">&times;</span>
+            <h2>🗺️ Desplazarse entre Pisos</h2>
+            <div id="floor-select-grid" class="floor-select-grid"></div>
+        </div>
+    </div>
+
+    <div id="trainingModal" class="modal">
+        <div class="modal-content large training-content">
+            <span class="close-modal-btn" data-target="trainingModal">&times;</span>
+            <h2>⚔️ Entrenar Habilidades</h2>
+            <p style="text-align:center;">Tu Saldo: <span id="training-player-col" style="color:#FFD700;">0</span> Col</p>
+            <div class="training-sections">
+                <div class="training-info-container"><h3>Opciones</h3><div class="training-grid" id="training-grid-display"></div></div>
+                <div class="training-details-container"><h3>📈 Ganancias</h3><ul id="training-stats-preview"></ul></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="adminKeyModal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <span class="close-modal-btn" data-target="adminKeyModal">&times;</span>
+            <h2>Acceso de Administrador</h2>
+            <input type="password" id="adminKeyValue" placeholder="Clave Secreta">
+            <button class="action-btn" id="submitAdminKeyBtn">Entrar</button>
+            <p id="adminKeyErrorMsg" style="color: #ff6b6b; display: none;"></p>
+        </div>
+    </div>
+
+    <div id="adminPanelModal" class="modal">
+        <div class="modal-content xlarge">
+            <span class="close-modal-btn" data-target="adminPanelModal">&times;</span>
+            <h2>Panel de Administrador</h2>
+            <div class="admin-sections-container">
+                <div class="admin-section">
+                    <h3>Jugador</h3>
+                    <div><input type="number" id="adminSetLevelValue" placeholder="Nivel"><button class="action-btn small-btn" id="btn-admin-set-level">Set Nivel</button></div>
+                    <div><input type="number" id="adminGiveExpValue" placeholder="EXP"><button class="action-btn small-btn" id="btn-admin-give-exp">Dar EXP</button></div>
+                    <div><input type="number" id="adminGiveColValue" placeholder="Col"><button class="action-btn small-btn" id="btn-admin-give-col">Dar Col</button></div>
+                </div>
+            </div>
+            <p id="adminPanelMessage" style="display: none;"></p>
+        </div>
+    </div>
+
+    <div id="mobSelectionModal" class="modal">
+        <div class="modal-content sao-panel">
+            <span class="close-modal-btn" data-target="mobSelectionModal">&times;</span>
+            <h2 class="panel-title">Selecciona un Enemigo</h2>
+            <div id="mobListContainer" class="mob-list-grid"></div>
+            <p id="mobSelectionMessage" class="modal-message"></p>
+        </div>
+    </div>
+
+    <!-- ES Module Entry Point -->
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>
