@@ -30,7 +30,10 @@ export function renderInventory() {
         el.onclick = () => {
             if (base.type === 'consumable') {
                 const idx = Game.player.inventory.findIndex(it => it.id === item.id);
-                if (idx !== -1) useConsumable(Game.player.inventory[idx], idx);
+                if (idx !== -1) {
+                    useConsumable(Game.player.inventory[idx], idx);
+                    renderInventory(); // Real-time update
+                }
             } else {
                 showNotification(`${base.name}: Material de forja. Tienes ${s.count}.`);
             }
@@ -44,6 +47,8 @@ export function renderInventory() {
         el.onclick = () => {
              if (['weapon','shield','armor','accessory'].includes(base.type)) {
                 equipItemByUid(item.uid);
+                renderInventory(); // Real-time update
+                renderEquipment(); // Real-time update
             }
         };
         grid.appendChild(el);
@@ -55,26 +60,8 @@ function createItemCard(base, count, level, stats) {
     const rarity = base.rarity || 'Common';
     const lowerRarity = rarity.toLowerCase();
     
-    div.className = `inventory-item rarity-${lowerRarity}`;
+    div.className = `inventory-item sao-electric-hover rarity-${lowerRarity}`;
     div.setAttribute('data-rarity', rarity); 
-
-    let detailsHtml = '';
-    
-    if (stats) {
-        const s = stats;
-        const parts = [];
-        if(s.attack) parts.push(`ATK:${s.attack}`);
-        if(s.defense) parts.push(`DEF:${s.defense}`);
-        if(s.hp) parts.push(`HP:${s.hp}`);
-        if(s.mp) parts.push(`MP:${s.mp}`);
-        detailsHtml += `<span class="item-details">${parts.join(' ')}</span>`;
-    } else if (base.description) {
-        detailsHtml += `<span class="item-details" style="font-style:italic;">${base.description}</span>`;
-    }
-
-    if (base.levelReq) {
-        detailsHtml += `<span class="item-level-req">Req. LV: ${base.levelReq}</span>`;
-    }
 
     const rarityColorMap = {
         'Common': '#b0c4de',
@@ -85,12 +72,10 @@ function createItemCard(base, count, level, stats) {
     const color = rarityColorMap[rarity] || '#b0c4de';
 
     div.innerHTML = `
-        <span class="item-icon">${base.icon}</span>
-        <span class="item-name" style="color: ${color}">${base.name}</span>
-        <span class="item-rarity-text" style="color: ${color}">${rarity}</span>
-        ${level ? `<div style="font-size:0.8rem; color:#fff; margin-top:2px;">LV ${level}</div>` : ''}
-        ${detailsHtml}
-        ${count > 1 ? `<span class="item-count">x${count}</span>` : ''}
+        <div class="item-icon">${base.icon}</div>
+        <div class="item-name" style="color: ${color}">${base.name}</div>
+        ${level ? `<div style="font-size:0.7rem; color:#aaa;">LV ${level}</div>` : ''}
+        ${count > 1 ? `<span class="item-count">${count}</span>` : ''}
     `;
     return div;
 }
@@ -99,21 +84,37 @@ export function renderEquipment() {
     ['weapon', 'shield', 'armor', 'accessory'].forEach(slot => {
         const el = document.getElementById(`equip-${slot}`);
         const item = Game.player.equipment[slot];
+        
+        el.className = 'equipment-slot sao-electric-hover';
+        el.innerHTML = ''; // Clear previous
+
         if (item) {
             const base = baseItems[item.id] || item;
             const rarity = base.rarity || 'Common';
-            const color = rarity === 'Mythic' ? '#ff4d4d' : (rarity === 'Epic' ? '#b19cd9' : (rarity === 'Rare' ? '#87ceeb' : '#b0c4de'));
+            const color = rarity === 'Mythic' ? '#ff4d4d' : (rarity === 'Epic' ? '#b19cd9' : (rarity === 'Rare' ? '#87ceeb' : '#fff'));
+            
+            el.classList.add('has-item');
+            el.classList.add(`rarity-${rarity.toLowerCase()}`);
             
             el.innerHTML = `
-                <span class="item-icon">${base.icon}</span>
-                <span class="item-name" style="color:${color}">${base.name}</span>
-                <span style="font-size:0.8em; color:#ddd">LV ${item.level || 1}</span>
+                <div class="slot-icon">${base.icon}</div>
+                <div class="slot-info">
+                    <span class="slot-name" style="color:${color}">${base.name}</span>
+                    <span class="slot-sub">LV ${item.level || 1} • ${rarity}</span>
+                </div>
             `;
-            el.className = `equipment-slot has-item rarity-${rarity.toLowerCase()}`;
-            el.onclick = () => unequipItem(slot);
+            
+            el.onclick = () => {
+                unequipItem(slot);
+                renderInventory(); // Real-time update
+                renderEquipment(); // Real-time update
+            };
         } else {
-            el.innerHTML = `<span>${slot.charAt(0).toUpperCase() + slot.slice(1)}</span>`;
-            el.className = 'equipment-slot';
+            el.classList.add('empty');
+            el.innerHTML = `
+                <div class="slot-placeholder">∅</div>
+                <span class="slot-label">${slot}</span>
+            `;
             el.onclick = null;
         }
     });

@@ -9,6 +9,7 @@ import { showNotification } from './utils/helpers.js';
 import { addItemToInventory, calculateEffectiveStats, trainPlayer } from './logic/playerLogic.js';
 import { floorData } from './data/floors.js';
 import { renderUpgradeEquipmentList } from './logic/blacksmithLogic.js';
+import { initSkillsUI, renderSkillsGrid } from './ui/skillsUI.js';
 
 window.Game = Game;
 
@@ -24,13 +25,15 @@ function initGame() {
     if (saved) {
         try {
             const data = JSON.parse(saved);
-            // Deep merge logic simplified for this scope, relying on Object.assign for top level
             Object.assign(Game.player, data);
             
-            // Re-calculate stats to ensure integrity
+            // Backwards compatibility for new Skill System
+            if (!Game.player.unlockedSkills) {
+                 Game.player.unlockedSkills = { 'sonic_leap': 1 };
+                 Game.player.skillPoints = Game.player.level * 2; // Retroactive SP
+            }
+
             calculateEffectiveStats();
-            
-            // Restore unlocked floors visuals/state
             Game.player.unlockedFloors.forEach(f => {
                 if(floorData[f]) floorData[f].unlocked = true;
             });
@@ -46,7 +49,6 @@ function initGame() {
             openModal('nameEntryModal');
         }
     } else {
-        // New Game Defaults
         if(Game.player.inventory.length === 0) {
             addItemToInventory({ id: 'healing_potion_s' }, 5);
             addItemToInventory({ id: 'basic_sword' }, 1);
@@ -57,8 +59,8 @@ function initGame() {
     updatePlayerHUD();
     renderWikiContent();
     setupEventListeners();
+    initSkillsUI(); // Initialize Skill Tabs
     
-    // Start Auto-Save Loop (Every 60 seconds)
     startAutoSave();
 }
 
@@ -66,7 +68,7 @@ function startAutoSave() {
     if (autoSaveInterval) clearInterval(autoSaveInterval);
     autoSaveInterval = setInterval(() => {
         if (Game.player.name && !Game.currentCombat.active) {
-            saveGame(true); // Silent save
+            saveGame(true); 
         }
     }, 60000); 
 }
@@ -75,10 +77,8 @@ function saveGame(silent = false) {
     try {
         localStorage.setItem('sao_save', JSON.stringify(Game.player));
         if (!silent) showNotification("Partida guardada.", "success");
-        else console.log("Auto-save complete.");
     } catch (e) {
         console.error("Save failed", e);
-        if (!silent) showNotification("Error al guardar.", "error");
     }
 }
 
@@ -111,6 +111,23 @@ function setupEventListeners() {
         document.getElementById('toggle-header-btn').classList.toggle('header-hidden');
     });
 
+    bind('music-toggle-btn', () => {
+        const audio = document.getElementById('background-music');
+        const btn = document.getElementById('music-toggle-btn');
+        if (audio.paused) {
+            audio.play().then(() => {
+                btn.textContent = "🔊 Pausar Música";
+                showNotification("Música activada", "default", 2000);
+            }).catch(e => {
+                console.warn("Audio autoplay blocked", e);
+                showNotification("Error: Interactúa con la página primero", "error");
+            });
+        } else {
+            audio.pause();
+            btn.textContent = "🔊 Música";
+        }
+    });
+
     bind('combat-btn', () => initCombat(false));
     bind('boss-combat-btn', () => initCombat(true));
     bind('inventory-btn', () => openModal('inventoryModal'));
@@ -128,35 +145,10 @@ function setupEventListeners() {
         renderUpgradeEquipmentList();
     });
 
+    // Replaced "Entrenar" with Skills Menu
     bind('train-skill-btn', () => {
-        openModal('trainingModal');
-        const trainGrid = document.getElementById('training-grid-display');
-        if (trainGrid) {
-            trainGrid.innerHTML = ''; 
-            const cost = 50 * Game.player.level;
-            
-            const opt = document.createElement('div');
-            opt.className = 'training-option'; 
-            opt.innerHTML = `
-                <span class="item-icon">💪</span>
-                <span class="item-name">Entrenamiento Físico</span>
-                <span class="training-stats-gain">Mejora ATK/HP/MP</span>
-                <span class="item-price">Costo: ${cost} Col</span>
-            `;
-            opt.onclick = () => {
-                if(trainPlayer()) saveGame(true); // Save after training
-            };
-            trainGrid.appendChild(opt);
-            
-            document.getElementById('training-player-col').textContent = Game.player.col;
-            document.getElementById('training-stats-preview').innerHTML = `
-                <li>ATK: +1</li>
-                <li>DEF: +0-2</li>
-                <li>HP: +5</li>
-                <li>MP: +2</li>
-                <li>Costo: ${cost} Col</li>
-            `;
-        }
+        openModal('skillsModal');
+        renderSkillsGrid();
     });
 
     // Combat Bindings
@@ -165,27 +157,17 @@ function setupEventListeners() {
     bind('combat-action-skills', () => showCombatOptions('skills'));
     bind('combat-action-potions', () => showCombatOptions('potions'));
     
-    // Floor Nav - Show floor list based on floorData
     bind('floor-navigate-btn', () => {
         const grid = document.getElementById('floor-select-grid');
         grid.innerHTML = '';
-        
-        // Show floors defined in data + any unlocked ones that might not have data yet (logic safety)
         const floorsToShow = Object.keys(floorData).map(Number).sort((a,b)=>a-b);
-        
         floorsToShow.forEach(fNum => {
             const floorInfo = floorData[fNum];
             const isUnlocked = Game.player.unlockedFloors.includes(fNum);
-            
             const btn = document.createElement('button');
             btn.className = 'floor-button'; 
             btn.disabled = !isUnlocked;
-            
-            btn.innerHTML = `
-                <span class="floor-name">Piso ${fNum}</span>
-                <span class="floor-description">${isUnlocked ? floorInfo.name : '???'}</span>
-            `;
-            
+            btn.innerHTML = `<div class="floor-num">${fNum}</div><div class="floor-name">${isUnlocked ? floorInfo.name : '???'}</div>`;
             if (isUnlocked) {
                 btn.onclick = () => {
                     Game.player.currentFloor = fNum;
@@ -201,20 +183,15 @@ function setupEventListeners() {
     });
 
     bind('save-game-btn', () => saveGame(false));
-    
     bind('load-game-btn', () => { 
-        if(confirm("¿Recargar la partida? Se perderán los cambios no guardados.")) {
-            location.reload();
-        }
+        if(confirm("¿Recargar la partida? Se perderán los cambios no guardados.")) location.reload();
     });
-    
     bind('new-game-btn', () => {
         if(confirm("¿Reiniciar TODO? Se borrará tu progreso.")) {
             localStorage.removeItem('sao_save');
             location.reload();
         }
     });
-    
     bind('submitPlayerNameBtn', () => {
         const name = document.getElementById('playerNameInput').value.trim();
         if(name) {

@@ -58,6 +58,7 @@
 
     <div class="floating-particles" id="particles"></div>
     <div id="notification-area"></div>
+    <div id="combat-animation-layer"></div>
 
     <header>
         <nav class="container"> 
@@ -120,7 +121,7 @@
             <div class="action-buttons">
                 <button class="action-btn" id="combat-btn">🗡️ Combatir</button>
                 <button class="action-btn" id="boss-combat-btn">👹 Jefe del Piso</button>
-                <button class="action-btn" id="train-skill-btn">⚔️ Entrenar (<span id="train-cost-display">50</span>) Col</button>
+                <button class="action-btn" id="train-skill-btn">⚔️ Habilidades</button>
                 <button class="action-btn" id="inventory-btn">🎒 Inventario</button> 
                 <button class="action-btn shop-btn" id="shop-btn">🛒 Tienda</button>
                 <button class="action-btn blacksmith-btn" id="blacksmith-btn">🛠️ Herrería</button>
@@ -171,6 +172,27 @@
                         <div class="equipment-slot" id="equip-armor" data-slot="armor"></div>
                         <div class="equipment-slot" id="equip-accessory" data-slot="accessory"></div>
                     </div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Skills Modal -->
+    <div id="skillsModal" class="modal">
+        <div class="modal-content xlarge skills-modal-content">
+            <span class="close-modal-btn" data-target="skillsModal">&times;</span>
+            <div class="skills-header">
+                <h2>⚔️ Árbol de Habilidades</h2>
+                <div class="sp-display">SP Disponibles: <span id="player-sp-display">0</span></div>
+            </div>
+            <div class="skills-layout">
+                <div class="skills-sidebar">
+                    <button class="skill-tab active" data-cat="sword_skills">Espada</button>
+                    <button class="skill-tab" data-cat="unique_skills">Únicas / Dual</button>
+                    <button class="skill-tab" data-cat="passive_skills">Pasivas</button>
+                </div>
+                <div class="skills-grid-wrapper">
+                    <div id="skills-grid-display" class="skills-grid"></div>
                 </div>
             </div>
         </div>
@@ -288,18 +310,6 @@
             <span class="close-modal-btn" data-target="floorNavigationModal">&times;</span>
             <h2>🗺️ Desplazarse entre Pisos</h2>
             <div id="floor-select-grid" class="floor-select-grid"></div>
-        </div>
-    </div>
-
-    <div id="trainingModal" class="modal">
-        <div class="modal-content large training-content">
-            <span class="close-modal-btn" data-target="trainingModal">&times;</span>
-            <h2>⚔️ Entrenar Habilidades</h2>
-            <p style="text-align:center;">Tu Saldo: <span id="training-player-col" style="color:#FFD700;">0</span> Col</p>
-            <div class="training-sections">
-                <div class="training-info-container"><h3>Opciones</h3><div class="training-grid" id="training-grid-display"></div></div>
-                <div class="training-details-container"><h3>📈 Ganancias</h3><ul id="training-stats-preview"></ul></div>
-            </div>
         </div>
     </div>
 

@@ -26,8 +26,13 @@ export const Game = {
         effectiveDefense: 0,
         maxHp: 0,
         maxMp: 0,
-        skills: [],
-        passiveSkills: [], 
+        
+        // Revised Skill System
+        unlockedSkills: {
+            'sonic_leap': 1 // Default starting skill
+        },
+        skillPoints: 0,
+        
         materials: {},
         activeStatusEffects: [], 
         lastCombatAction: null, 

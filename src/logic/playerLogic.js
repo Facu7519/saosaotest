@@ -3,7 +3,6 @@ import { Game } from '../state/gameState.js';
 import { baseItems } from '../data/items.js';
 import { genUid, showNotification } from '../utils/helpers.js';
 import { updatePlayerHUD } from '../ui/hud.js';
-import { skillData, passiveSkillData } from '../data/skills.js';
 
 export function calculateEffectiveStats() {
     const p = Game.player;
@@ -34,26 +33,9 @@ export function calculateEffectiveStats() {
 }
 
 export function trainPlayer() {
-    const cost = 50 * Game.player.level;
-    if (Game.player.col >= cost) {
-        Game.player.col -= cost;
-        Game.player.baseAttack += 1;
-        const defGain = Math.random() < 0.4 ? 2 : (Math.random() < 0.7 ? 1 : 0);
-        Game.player.baseDefense += defGain;
-        Game.player.baseMaxHp += 5;
-        Game.player.baseMaxMp += 2;
-        
-        Game.player.hp = Math.min(Game.player.hp + 5, Game.player.maxHp);
-        Game.player.mp = Math.min(Game.player.mp + 2, Game.player.maxMp);
-        
-        calculateEffectiveStats();
-        updatePlayerHUD();
-        showNotification(`¡Entrenamiento completo! (+ATK, +HP, +MP, +${defGain} DEF)`, "success");
-        return true;
-    } else {
-        showNotification(`Necesitas ${cost} Col para entrenar.`, "error");
-        return false;
-    }
+    // Replaced by Skill Tree, but kept for basic stat boosting if desired
+    openModal('skillsModal');
+    return false;
 }
 
 export function gainExp(amount) {
@@ -77,29 +59,15 @@ export function levelUp() {
     p.baseAttack += Math.floor(2 + p.level * 0.2);
     p.baseDefense += Math.floor(1 + p.level * 0.15);
     
-    // Heal on level up
+    // Skill Points
+    const spGain = 3;
+    p.skillPoints = (p.skillPoints || 0) + spGain;
+
     calculateEffectiveStats();
     p.hp = p.maxHp;
     p.mp = p.maxMp;
     
-    showNotification(`¡LEVEL UP! Nivel ${p.level} alcanzado.`, "success", 6000);
-    
-    // Unlock Active Skills
-    Object.entries(skillData).forEach(([id, data]) => {
-        if (data.levelReq === p.level && !p.skills.find(s => s.id === id)) {
-            p.skills.push({ id, ...data });
-            showNotification(`Nueva habilidad: ${data.name}`, "success");
-        }
-    });
-
-    // Unlock Passive Skills
-    Object.entries(passiveSkillData).forEach(([id, data]) => {
-        if (data.levelReq === p.level && !p.passiveSkills.find(s => s.id === id)) {
-            p.passiveSkills.push({ id, ...data });
-            showNotification(`Nueva pasiva: ${data.name}`, "success");
-        }
-    });
-    
+    showNotification(`¡LEVEL UP! Nivel ${p.level}. +${spGain} SP.`, "success", 6000);
     updatePlayerHUD();
 }
 

@@ -161,16 +161,145 @@
     to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* --- Grids e Ítems --- */
-.inventory-sections, .shop-sections, .blacksmith-sections, .training-sections {
-    display: flex; gap: 2rem; margin-top: 1rem;
+/* --- ELECTRIC GLOW / SOLO LEVELING STYLE --- */
+@keyframes electricPulse {
+    0% { box-shadow: 0 0 5px rgba(0,255,255,0.2), inset 0 0 5px rgba(0,255,255,0.1); border-color: rgba(0,255,255,0.4); }
+    50% { box-shadow: 0 0 15px rgba(0,255,255,0.5), inset 0 0 10px rgba(0,255,255,0.2); border-color: rgba(0,255,255,0.9); }
+    100% { box-shadow: 0 0 5px rgba(0,255,255,0.2), inset 0 0 5px rgba(0,255,255,0.1); border-color: rgba(0,255,255,0.4); }
 }
-.inventory-grid-container, .shop-items-container, .blacksmith-recipes-container, .training-info-container {
-    flex: 2; min-height: 300px;
-}
-.player-equipment-container, .blacksmith-materials-info, .training-details-container { flex: 1; }
 
-.inventory-grid, .shop-grid, .blacksmith-grid, .training-grid, .mob-list-grid {
+.sao-electric-hover {
+    transition: all 0.2s ease;
+    border: 1px solid rgba(70, 130, 180, 0.3);
+}
+.sao-electric-hover:hover {
+    animation: electricPulse 1.5s infinite;
+    transform: translateY(-4px) scale(1.02);
+    background: rgba(20, 30, 50, 0.9);
+    z-index: 10;
+}
+
+/* --- INVENTORY & EQUIPMENT GRID SYSTEMS --- */
+.inventory-sections {
+    display: flex; gap: 2rem; margin-top: 1rem; align-items: flex-start;
+}
+.inventory-grid-container { flex: 2; }
+.player-equipment-container { flex: 1; min-width: 300px; }
+
+.inventory-grid {
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); 
+    gap: 10px;
+    padding: 15px; 
+    border-radius: 10px; 
+    max-height: 500px;
+    overflow-y: auto; 
+    background: rgba(5, 8, 15, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.inventory-item {
+    background: rgba(35, 40, 60, 0.6);
+    border-radius: 6px; 
+    padding: 8px; 
+    text-align: center;
+    cursor: pointer; 
+    position: relative;
+    display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+    min-height: 120px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+.inventory-item .item-icon {
+    font-size: 2.2rem;
+    margin-bottom: 5px;
+    filter: drop-shadow(0 0 5px rgba(255,255,255,0.1));
+}
+.inventory-item .item-name {
+    font-size: 0.8rem; line-height: 1.1; margin-bottom: 4px;
+    height: 32px; overflow: hidden; display: flex; align-items: center; justify-content: center;
+}
+.inventory-item .item-count {
+    font-size: 0.75rem; background: #000; padding: 2px 6px; border-radius: 10px;
+    position: absolute; top: 4px; right: 4px; border: 1px solid #555;
+}
+
+/* Equipment Slots - Modern Look */
+.player-equipment h3 { text-align: center; color: #a1d8ff; margin-bottom: 15px; letter-spacing: 1px; }
+.equipment-slots {
+    display: flex; flex-direction: column; gap: 12px;
+}
+
+.equipment-slot {
+    background: linear-gradient(90deg, rgba(20,25,40,0.9), rgba(30,35,50,0.8));
+    border: 1px solid rgba(80, 100, 120, 0.3);
+    border-radius: 8px;
+    padding: 10px 15px;
+    min-height: 70px;
+    display: flex; align-items: center; gap: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+.equipment-slot::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: #444; transition: background 0.3s;
+}
+.equipment-slot:hover {
+    background: linear-gradient(90deg, rgba(25,35,55,1), rgba(40,45,60,0.9));
+    box-shadow: 0 0 15px rgba(0, 180, 255, 0.15);
+    border-color: rgba(135, 206, 235, 0.5);
+}
+
+/* Filled Slot Styles */
+.equipment-slot.has-item::before { background: #00ffff; box-shadow: 0 0 8px #00ffff; }
+.equipment-slot.has-item .slot-icon { font-size: 2rem; }
+.equipment-slot.has-item .slot-info { display: flex; flex-direction: column; align-items: flex-start; }
+.equipment-slot.has-item .slot-name { font-weight: bold; font-size: 1rem; color: #fff; }
+.equipment-slot.has-item .slot-sub { font-size: 0.8rem; color: #87ceeb; }
+
+/* Empty Slot Styles */
+.equipment-slot.empty { opacity: 0.7; }
+.equipment-slot.empty .slot-placeholder { font-size: 1.5rem; opacity: 0.3; margin-right: 10px; }
+.equipment-slot.empty .slot-label { font-size: 0.9rem; color: #667; text-transform: uppercase; letter-spacing: 1px; }
+
+/* Floor Navigation Grid */
+.floor-select-grid {
+    display: grid; 
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 15px; padding: 10px;
+}
+.floor-button {
+    background: linear-gradient(135deg, rgba(30, 35, 50, 0.9), rgba(15, 20, 30, 0.95));
+    border: 1px solid rgba(80, 100, 130, 0.3);
+    border-radius: 10px;
+    padding: 20px 10px;
+    color: #e0e0e0;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; min-height: 100px;
+    position: relative;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+}
+
+.floor-button:hover:not(:disabled) {
+    transform: translateY(-5px);
+    border-color: #00ffff;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.2), inset 0 0 10px rgba(0, 255, 255, 0.05);
+}
+.floor-button:disabled {
+    opacity: 0.4; filter: grayscale(1); cursor: not-allowed;
+    background: #111; border-color: #333;
+}
+.floor-button .floor-num { font-size: 1.8rem; font-weight: 800; color: #556; transition: color 0.3s; }
+.floor-button:hover:not(:disabled) .floor-num { color: #00ffff; text-shadow: 0 0 10px rgba(0, 255, 255, 0.5); }
+.floor-button .floor-name { font-size: 0.85rem; color: #aaa; text-align: center; line-height: 1.2; }
+
+
+/* General Grids (Shop, Blacksmith, etc) */
+.shop-grid, .blacksmith-grid, .training-grid, .mob-list-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     gap: 12px; border: 1px solid rgba(70, 130, 180, 0.25);
     padding: 15px; border-radius: 10px; max-height: 480px;
@@ -178,8 +307,8 @@
     align-content: start; justify-content: center;
 }
 
-/* Item Card */
-.inventory-item, .shop-item, .blacksmith-item, .training-option, .mob-card {
+/* Item Card (General) */
+.shop-item, .blacksmith-item, .training-option, .mob-card {
     background: rgba(45, 50, 75, 0.6);
     border: 2px solid rgba(70, 130, 180, 0.4);
     border-radius: 8px; padding: 10px; text-align: center;
@@ -188,7 +317,7 @@
     display: flex; flex-direction: column; align-items: center;
     justify-content: flex-start; min-height: 220px;
 }
-.inventory-item:hover, .shop-item:hover, .blacksmith-item:hover, .training-option:hover, .mob-card:hover {
+.shop-item:hover, .blacksmith-item:hover, .training-option:hover, .mob-card:hover {
     transform: translateY(-6px) scale(1.02);
     box-shadow: 0 14px 34px rgba(135, 206, 235, 0.22);
     border-color: #87CEEB;
@@ -198,8 +327,8 @@
 .inventory-item::after, .shop-item::after, .blacksmith-item::after {
     content: attr(data-rarity);
     position: absolute; top: 5px; right: 5px;
-    font-size: 10px; padding: 2px 6px; border-radius: 4px;
-    background: rgba(0,0,0,0.6); color: inherit; opacity: 0.95;
+    font-size: 9px; padding: 2px 4px; border-radius: 3px;
+    background: rgba(0,0,0,0.8); color: inherit; opacity: 0.8;
     text-transform: uppercase; letter-spacing: 0.5px;
 }
 div.shop-item.rarity-common.common::after { display: none !important; }
@@ -221,12 +350,6 @@ div.shop-item.rarity-common.common::after { display: none !important; }
 .item-price {
     font-size: 0.9em; color: #FFD700; font-weight: bold;
     margin-top: auto; padding-top: 8px; width: 100%; border-top: 1px solid rgba(255,255,255,0.1);
-}
-.item-count {
-    position: absolute; bottom: 10px; right: 10px;
-    background: linear-gradient(180deg, rgba(0,0,0,0.7), rgba(10,10,18,0.9));
-    border-radius: 50%; padding: 4px 8px; font-size: 0.85em;
-    color: #fff; border: 1px solid rgba(255,255,255,0.2);
 }
 
 /* Rarezas Colors */
@@ -358,24 +481,6 @@ div.shop-item.rarity-common.common::after { display: none !important; }
     100% { transform: translate(0,0); }
 }
 
-/* Floor Button */
-.floor-button {
-    background: linear-gradient(180deg, #4a5464 0%, #363c47 100%);
-    border: 1px solid rgba(135, 206, 235, 0.3);
-    border-radius: 8px; color: #e0e0e0;
-    padding: 15px; font-size: 0.9em; cursor: pointer;
-    transition: all 0.2s ease; display: flex; flex-direction: column;
-    align-items: center; gap: 8px; min-height: 80px; justify-content: center;
-}
-.floor-button:hover:not(:disabled) {
-    background: linear-gradient(180deg, #5a6474 0%, #464c57 100%);
-    border-color: rgba(135, 206, 235, 0.5); transform: translateY(-2px);
-}
-.floor-button:disabled {
-    background: #1a1e25; border-color: rgba(80, 80, 80, 0.3);
-    color: #555; cursor: default; transform: none; opacity: 0.5; filter: grayscale(100%);
-}
-
 .skills-list, .potions-list {
     display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 15px;
 }
@@ -432,7 +537,7 @@ div.shop-item.rarity-common.common::after { display: none !important; }
     .action-btn { width: 70%; max-width: 280px; }
     .combat-arena { flex-direction: column; align-items: center; }
     .combatant-display { width: 90%; }
-    .inventory-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+    .inventory-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
 }
 
 /* Status Effect Badges */
@@ -459,4 +564,154 @@ div.shop-item.rarity-common.common::after { display: none !important; }
     color: #fff; padding: 4px 8px; border-radius: 4px;
     white-space: nowrap; font-size: 0.8rem; pointer-events: none;
     z-index: 101;
+}
+
+/* --- SKILLS MODAL & TREE --- */
+.skills-modal-content {
+    background: linear-gradient(135deg, #0f1520 0%, #1a2233 100%);
+    display: flex; flex-direction: column; height: 80vh; padding: 0; overflow: hidden;
+}
+
+.skills-header {
+    padding: 1.5rem; background: rgba(0,0,0,0.3);
+    border-bottom: 1px solid rgba(135, 206, 235, 0.2);
+    display: flex; justify-content: space-between; align-items: center;
+}
+.sp-display {
+    font-size: 1.4rem; color: #ffd700; font-weight: bold; font-family: 'Rajdhani', sans-serif;
+}
+
+.skills-layout { display: flex; flex: 1; overflow: hidden; }
+
+.skills-sidebar {
+    width: 200px; background: rgba(0,0,0,0.2);
+    display: flex; flex-direction: column; padding: 1rem; gap: 0.5rem;
+    border-right: 1px solid rgba(255,255,255,0.05);
+}
+
+.skill-tab {
+    background: transparent; border: 1px solid transparent;
+    color: #889; padding: 12px; text-align: left;
+    cursor: pointer; font-family: 'Exo 2', sans-serif;
+    transition: all 0.2s; border-radius: 6px;
+}
+.skill-tab:hover { background: rgba(255,255,255,0.05); color: #dde; }
+.skill-tab.active {
+    background: linear-gradient(90deg, rgba(70,130,180,0.2), transparent);
+    color: #00ffff; border-left: 3px solid #00ffff;
+}
+
+.skills-grid-wrapper { flex: 1; padding: 2rem; overflow-y: auto; }
+.skills-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.skill-card {
+    background: rgba(30,35,50,0.8); border: 1px solid #445;
+    border-radius: 12px; padding: 1.2rem;
+    display: flex; flex-direction: column; gap: 0.8rem;
+    transition: all 0.3s ease; position: relative;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.skill-card.unlocked { border-color: #00ffff; box-shadow: 0 0 15px rgba(0,255,255,0.1); }
+.skill-card.locked { opacity: 0.6; filter: grayscale(1); }
+.skill-card.purchasable { border-color: #ffd700; opacity: 1; filter: none; }
+
+.skill-icon-frame {
+    font-size: 2.5rem; background: rgba(0,0,0,0.3);
+    width: 60px; height: 60px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(255,255,255,0.1); align-self: center;
+}
+.skill-card.unlocked .skill-icon-frame { box-shadow: 0 0 10px rgba(0,255,255,0.3); border-color: #00ffff; }
+
+.skill-info h3 { color: #fff; font-size: 1.1rem; display: flex; justify-content: space-between; }
+.skill-level { font-size: 0.8rem; color: #87ceeb; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; }
+.skill-info p { font-size: 0.85rem; color: #aaa; margin: 5px 0; min-height: 40px; }
+
+.skill-stats {
+    display: flex; gap: 10px; font-size: 0.85rem; color: #ffd700; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 4px;
+}
+
+.skill-btn {
+    width: 100%; padding: 8px; border: none; border-radius: 6px;
+    font-weight: bold; cursor: pointer; transition: all 0.2s;
+    font-family: 'Rajdhani', sans-serif; text-transform: uppercase;
+}
+.skill-btn.upgrade { background: #00bcd4; color: #000; }
+.skill-btn.unlock { background: #ffc107; color: #000; }
+.skill-btn.maxed { background: #4caf50; color: #fff; cursor: default; }
+.skill-btn.locked { background: #333; color: #666; cursor: not-allowed; }
+.skill-btn:hover:not(:disabled) { filter: brightness(1.2); transform: translateY(-2px); }
+
+/* --- COMBAT ANIMATIONS --- */
+#combat-animation-layer {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9000;
+}
+.skill-anim {
+    position: absolute; width: 200px; height: 200px;
+    transform: translate(-50%, -50%);
+    background-size: contain; background-repeat: no-repeat; background-position: center;
+    opacity: 0;
+}
+
+/* Animations Definitions */
+@keyframes slash {
+    0% { transform: translate(-50%, -50%) rotate(-45deg) scale(0.5); opacity: 0; filter: brightness(2); }
+    30% { opacity: 1; transform: translate(-50%, -50%) rotate(0deg) scale(1.2); }
+    100% { transform: translate(-50%, -50%) rotate(45deg) scale(1.5); opacity: 0; }
+}
+
+@keyframes starburst {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; background-color: rgba(0,255,255,0.8); clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+    50% { transform: translate(-50%, -50%) scale(2) rotate(180deg); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(3) rotate(360deg); opacity: 0; }
+}
+
+.anim-slash-sonic {
+    background: linear-gradient(45deg, transparent 40%, #00ffff 50%, transparent 60%);
+    animation: slash 0.4s ease-out;
+}
+.anim-slash-square {
+    border: 4px solid #87ceeb;
+    box-shadow: 0 0 20px #87ceeb;
+    animation: square-expand 0.6s ease-out;
+}
+@keyframes square-expand {
+    0% { width: 0; height: 0; opacity: 1; transform: translate(-50%, -50%) rotate(45deg); }
+    80% { width: 300px; height: 300px; opacity: 0; transform: translate(-50%, -50%) rotate(45deg); border-width: 10px; }
+}
+
+.anim-starburst {
+    background: radial-gradient(circle, #00ffff, #0000ff);
+    border-radius: 50%;
+    animation: starburst 1s ease-out;
+    mix-blend-mode: screen;
+}
+
+.shake-violent { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-8px, 0, 0); } 40%, 60% { transform: translate3d(8px, 0, 0); } }
+
+/* Basic Attack Animation */
+.anim-slash-normal {
+    background: linear-gradient(120deg, transparent 42%, rgba(255, 255, 255, 0.9) 50%, transparent 58%);
+    box-shadow: 0 0 10px rgba(135, 206, 235, 0.5);
+    animation: normalSlash 0.25s ease-out forwards;
+}
+
+@keyframes normalSlash {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.6) rotate(-45deg);
+    }
+    40% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.1) rotate(0deg);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.3) rotate(45deg);
+    }
 }
