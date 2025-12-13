@@ -12,29 +12,41 @@ import { renderUpgradeEquipmentList } from './logic/blacksmithLogic.js';
 
 window.Game = Game;
 
+// Auto-Save Interval Reference
+let autoSaveInterval;
+
 function initGame() {
     console.log("Inicializando juego...");
     createParticles();
-    const saved = localStorage.getItem('sao_save');
     
+    // Attempt to load save
+    const saved = localStorage.getItem('sao_save');
     if (saved) {
         try {
             const data = JSON.parse(saved);
+            // Deep merge logic simplified for this scope, relying on Object.assign for top level
             Object.assign(Game.player, data);
+            
+            // Re-calculate stats to ensure integrity
             calculateEffectiveStats();
             
-            // Restore floor unlocks in floorData based on save
+            // Restore unlocked floors visuals/state
             Game.player.unlockedFloors.forEach(f => {
                 if(floorData[f]) floorData[f].unlocked = true;
             });
 
-            if (!Game.player.name) openModal('nameEntryModal');
-            else showNotification("Juego cargado.", "success");
+            if (!Game.player.name) {
+                openModal('nameEntryModal');
+            } else {
+                showNotification("Juego cargado correctamente.", "success");
+            }
         } catch (e) {
             console.error("Error cargando partida:", e);
+            localStorage.removeItem('sao_save'); // Corrupt save cleanup
             openModal('nameEntryModal');
         }
     } else {
+        // New Game Defaults
         if(Game.player.inventory.length === 0) {
             addItemToInventory({ id: 'healing_potion_s' }, 5);
             addItemToInventory({ id: 'basic_sword' }, 1);
@@ -45,6 +57,29 @@ function initGame() {
     updatePlayerHUD();
     renderWikiContent();
     setupEventListeners();
+    
+    // Start Auto-Save Loop (Every 60 seconds)
+    startAutoSave();
+}
+
+function startAutoSave() {
+    if (autoSaveInterval) clearInterval(autoSaveInterval);
+    autoSaveInterval = setInterval(() => {
+        if (Game.player.name && !Game.currentCombat.active) {
+            saveGame(true); // Silent save
+        }
+    }, 60000); 
+}
+
+function saveGame(silent = false) {
+    try {
+        localStorage.setItem('sao_save', JSON.stringify(Game.player));
+        if (!silent) showNotification("Partida guardada.", "success");
+        else console.log("Auto-save complete.");
+    } catch (e) {
+        console.error("Save failed", e);
+        if (!silent) showNotification("Error al guardar.", "error");
+    }
 }
 
 function createParticles() {
@@ -108,7 +143,9 @@ function setupEventListeners() {
                 <span class="training-stats-gain">Mejora ATK/HP/MP</span>
                 <span class="item-price">Costo: ${cost} Col</span>
             `;
-            opt.onclick = () => trainPlayer();
+            opt.onclick = () => {
+                if(trainPlayer()) saveGame(true); // Save after training
+            };
             trainGrid.appendChild(opt);
             
             document.getElementById('training-player-col').textContent = Game.player.col;
@@ -155,6 +192,7 @@ function setupEventListeners() {
                     updatePlayerHUD();
                     closeModal('floorNavigationModal');
                     showNotification(`Viajaste al Piso ${fNum}`);
+                    saveGame(true);
                 };
             }
             grid.appendChild(btn);
@@ -162,25 +200,28 @@ function setupEventListeners() {
         openModal('floorNavigationModal');
     });
 
-    bind('save-game-btn', () => {
-        localStorage.setItem('sao_save', JSON.stringify(Game.player));
-        showNotification("Partida guardada.", "success");
-    });
+    bind('save-game-btn', () => saveGame(false));
+    
     bind('load-game-btn', () => { 
-        location.reload();
+        if(confirm("¿Recargar la partida? Se perderán los cambios no guardados.")) {
+            location.reload();
+        }
     });
+    
     bind('new-game-btn', () => {
-        if(confirm("¿Reiniciar? Se perderá el progreso.")) {
+        if(confirm("¿Reiniciar TODO? Se borrará tu progreso.")) {
             localStorage.removeItem('sao_save');
             location.reload();
         }
     });
+    
     bind('submitPlayerNameBtn', () => {
         const name = document.getElementById('playerNameInput').value.trim();
         if(name) {
             Game.player.name = name;
             closeModal('nameEntryModal');
             updatePlayerHUD();
+            saveGame(true);
         }
     });
     

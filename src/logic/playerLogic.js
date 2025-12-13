@@ -66,21 +66,23 @@ export function gainExp(amount) {
     updatePlayerHUD();
 }
 
-function levelUp() {
+export function levelUp() {
     const p = Game.player;
     p.level++;
-    p.currentExp -= p.neededExp;
+    p.currentExp = Math.max(0, p.currentExp - p.neededExp);
     p.neededExp = Math.floor(p.neededExp * 1.35 + 80);
     p.baseMaxHp += Math.floor(20 + p.level * 1.5);
     p.baseMaxMp += Math.floor(8 + p.level * 0.8);
     p.col += 100 * p.level;
     p.baseAttack += Math.floor(2 + p.level * 0.2);
     p.baseDefense += Math.floor(1 + p.level * 0.15);
+    
+    // Heal on level up
+    calculateEffectiveStats();
     p.hp = p.maxHp;
     p.mp = p.maxMp;
     
-    calculateEffectiveStats();
-    showNotification(`¡LEVEL UP! Nivel ${p.level}`, "success", 6000);
+    showNotification(`¡LEVEL UP! Nivel ${p.level} alcanzado.`, "success", 6000);
     
     // Unlock Active Skills
     Object.entries(skillData).forEach(([id, data]) => {
@@ -97,11 +99,16 @@ function levelUp() {
             showNotification(`Nueva pasiva: ${data.name}`, "success");
         }
     });
+    
+    updatePlayerHUD();
 }
 
 export function addItemToInventory(itemData, quantity = 1) {
     const base = baseItems[itemData.id];
-    if(!base) return;
+    if(!base) {
+        console.warn(`Item ID not found: ${itemData.id}`);
+        return;
+    }
     
     const stackable = base.type === 'consumable' || base.type === 'material';
     

@@ -1,5 +1,4 @@
 
-import { showNotification } from '../utils/helpers.js';
 import { Game } from '../state/gameState.js';
 import { wikiCharacterData, wikiWeaponData, wikiFloorsData, wikiGuildsData } from '../data/wiki.js';
 
@@ -21,7 +20,12 @@ function renderCardGrid(container, dataObj, type) {
     
     // Add intro text for floors/guilds if needed
     if (type === 'floor') {
-        container.innerHTML = `<p style="text-align:center; margin-bottom:2rem; width:100%;">Explora los diversos y peligrosos pisos del castillo flotante.</p>`;
+        const intro = document.createElement('p');
+        intro.style.textAlign = 'center';
+        intro.style.marginBottom = '2rem';
+        intro.style.width = '100%';
+        intro.textContent = 'Explora los diversos y peligrosos pisos del castillo flotante.';
+        container.appendChild(intro);
     }
 
     const gridDiv = document.createElement('div');
@@ -45,13 +49,16 @@ function renderCardGrid(container, dataObj, type) {
         card.addEventListener('click', () => {
             const content = document.getElementById('modal-body-content');
             content.innerHTML = `
-                <span class="modal-icon">${data.icon}</span>
+                <div style="text-align: center; margin-bottom: 1rem;">
+                    <span style="font-size: 4rem;">${data.icon}</span>
+                </div>
                 <h2>${data.name}</h2>
                 <p style="margin-bottom:1rem;">${data.description}</p>
                 ${data.fullInfo ? `<p><strong>Detalles:</strong> ${data.fullInfo}</p>` : ''}
-                ${data.details ? `<p><strong>Detalles:</strong> ${data.details}</p>` : ''}
+                ${data.details ? `<p><strong>Info:</strong> ${data.details}</p>` : ''}
             `;
-            document.getElementById('infoModal').style.display = 'block';
+            const modal = document.getElementById('infoModal');
+            if(modal) modal.style.display = 'block';
         });
 
         gridDiv.appendChild(card);
@@ -63,6 +70,7 @@ function renderCardGrid(container, dataObj, type) {
 // Stats Modal
 export function renderPlayerStats() {
     const container = document.getElementById('stats-content-container');
+    if(!container) return;
     const p = Game.player;
     
     // Equip bonuses calculation

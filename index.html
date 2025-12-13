@@ -231,34 +231,47 @@
         </div>
     </div>
 
+    <!-- Combat Modal Redesign -->
     <div id="combatModal" class="modal">
         <div class="modal-content xlarge">
-            <h2 id="combat-title">¡Combate!</h2>
-            <div class="combat-arena">
-                <div class="combatant-display" id="combat-player-display">
-                    <h3 id="combat-player-name">Jugador</h3>
-                    <div class="combatant-icon"><img src="https://1.bp.blogspot.com/-nbJQwJhSNUA/UXusEdjyxxI/AAAAAAAAACg/HDkAnGAH3s0/s1600/sao_ep9_dualwield_kirito_oa.png" alt="Jugador"></div>
-                    <div class="combat-hp-bar-container"><div class="combat-hp-bar-fill" id="combat-player-hp-bar"></div></div>
-                    <div class="combat-hp-text">HP: <span id="combat-player-hp-current"></span>/<span id="combat-player-hp-max"></span></div>
-                    <div class="status-effects-display" id="combat-player-status-effects-display"></div>
+            <!-- Active Combat View -->
+            <div id="combat-active-view">
+                <h2 id="combat-title">¡Combate!</h2>
+                
+                <!-- Combo Counter Container -->
+                <div id="combat-combo-display" class="combo-counter hidden">0 HITS</div>
+
+                <div class="combat-arena">
+                    <div class="combatant-display" id="combat-player-display">
+                        <h3 id="combat-player-name">Jugador</h3>
+                        <div class="combatant-icon"><img src="https://1.bp.blogspot.com/-nbJQwJhSNUA/UXusEdjyxxI/AAAAAAAAACg/HDkAnGAH3s0/s1600/sao_ep9_dualwield_kirito_oa.png" alt="Jugador"></div>
+                        <div class="combat-hp-bar-container"><div class="combat-hp-bar-fill" id="combat-player-hp-bar"></div></div>
+                        <div class="combat-hp-text">HP: <span id="combat-player-hp-current"></span>/<span id="combat-player-hp-max"></span></div>
+                        <div class="status-effects-display" id="combat-player-status-effects-display"></div>
+                    </div>
+                    <div class="combatant-display" id="combat-enemy-display">
+                        <h3 id="combat-enemy-name">Enemigo</h3>
+                        <div class="combatant-icon" id="combat-enemy-icon">❓</div>
+                        <div class="combat-hp-bar-container"><div class="combat-hp-bar-fill" id="combat-enemy-hp-bar-fill"></div></div>
+                        <div class="combat-hp-text">HP: <span id="combat-enemy-hp-current"></span>/<span id="combat-enemy-hp-max"></span></div>
+                        <div class="status-effects-display" id="combat-enemy-status-effects-display"></div>
+                    </div>
                 </div>
-                <div class="combatant-display" id="combat-enemy-display">
-                    <h3 id="combat-enemy-name">Enemigo</h3>
-                    <div class="combatant-icon" id="combat-enemy-icon">❓</div>
-                    <div class="combat-hp-bar-container"><div class="combat-hp-bar-fill" id="combat-enemy-hp-bar-fill"></div></div>
-                    <div class="combat-hp-text">HP: <span id="combat-enemy-hp-current"></span>/<span id="combat-enemy-hp-max"></span></div>
-                    <div class="status-effects-display" id="combat-enemy-status-effects-display"></div>
+                <div class="combat-actions">
+                    <button class="action-btn" id="combat-action-attack">🗡️ Atacar</button>
+                    <button class="action-btn" id="combat-action-skills">✨ Habilidades</button>
+                    <button class="action-btn" id="combat-action-potions">🧪 Pociones</button>
+                    <button class="action-btn" id="combat-action-flee" style="background: linear-gradient(180deg, #ffc107, #f0ad4e);">🏃 Huir</button>
                 </div>
+                <div id="combat-skills-list-container" class="skills-list" style="display:none;"></div>
+                <div id="combat-potions-list-container" class="potions-list" style="display:none;"></div>
+                <div class="combat-log" id="combat-log-display"><p class="system-message">Esperando acción...</p></div>
             </div>
-            <div class="combat-actions">
-                <button class="action-btn" id="combat-action-attack">🗡️ Atacar</button>
-                <button class="action-btn" id="combat-action-skills">✨ Habilidades</button>
-                <button class="action-btn" id="combat-action-potions">🧪 Pociones</button>
-                <button class="action-btn" id="combat-action-flee" style="background: linear-gradient(180deg, #ffc107, #f0ad4e);">🏃 Huir</button>
+
+            <!-- Results View (Hidden by default) -->
+            <div id="combat-results-view" style="display: none;">
+                <!-- Content injected via JS -->
             </div>
-            <div id="combat-skills-list-container" class="skills-list" style="display:none;"></div>
-            <div id="combat-potions-list-container" class="potions-list" style="display:none;"></div>
-            <div class="combat-log" id="combat-log-display"><p class="system-message">Esperando acción...</p></div>
         </div>
     </div>
 
@@ -307,9 +320,29 @@
             <div class="admin-sections-container">
                 <div class="admin-section">
                     <h3>Jugador</h3>
-                    <div><input type="number" id="adminSetLevelValue" placeholder="Nivel"><button class="action-btn small-btn" id="btn-admin-set-level">Set Nivel</button></div>
-                    <div><input type="number" id="adminGiveExpValue" placeholder="EXP"><button class="action-btn small-btn" id="btn-admin-give-exp">Dar EXP</button></div>
-                    <div><input type="number" id="adminGiveColValue" placeholder="Col"><button class="action-btn small-btn" id="btn-admin-give-col">Dar Col</button></div>
+                    <div style="margin-bottom:10px;">
+                        <input type="number" id="adminSetLevelValue" placeholder="Nivel">
+                        <button class="action-btn small-btn" id="btn-admin-set-level">Set Nivel</button>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <button class="action-btn small-btn" id="btn-admin-force-lvlup">Force Level Up (+1)</button>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <input type="number" id="adminGiveExpValue" placeholder="EXP">
+                        <button class="action-btn small-btn" id="btn-admin-give-exp">Dar EXP</button>
+                    </div>
+                    <div>
+                        <input type="number" id="adminGiveColValue" placeholder="Col">
+                        <button class="action-btn small-btn" id="btn-admin-give-col">Dar Col</button>
+                    </div>
+                </div>
+                <div class="admin-section">
+                    <h3>Items</h3>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <input type="text" id="adminItemIdValue" placeholder="ID del Ítem (ej: elucidator)" style="width: 100%;">
+                        <input type="number" id="adminItemCountValue" placeholder="Cantidad" value="1" style="width: 100%;">
+                        <button class="action-btn small-btn" id="btn-admin-grant-item">Dar Ítem</button>
+                    </div>
                 </div>
             </div>
             <p id="adminPanelMessage" style="display: none;"></p>

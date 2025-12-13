@@ -3,13 +3,14 @@ import { Game, ADMIN_CONFIG } from '../state/gameState.js';
 import { sha256Hex, showNotification } from '../utils/helpers.js';
 import { openModal, closeModal } from '../ui/modals.js';
 import { updatePlayerHUD } from '../ui/hud.js';
-import { gainExp } from './playerLogic.js';
+import { gainExp, levelUp, addItemToInventory } from './playerLogic.js';
 
 export async function checkAdminKey() {
     const input = document.getElementById('adminKeyValue');
     const hash = await sha256Hex(input.value);
     
-    if (hash === ADMIN_CONFIG.HASH || input.value === 'linkstart') { // Backdoor simple para pruebas si hash falla
+    // Hash match or backdoor for testing
+    if (hash === ADMIN_CONFIG.HASH || input.value === 'linkstart') { 
         Game.player.isAdmin = true;
         closeModal('adminKeyModal');
         openModal('adminPanelModal');
@@ -32,6 +33,11 @@ export function setupAdminListeners() {
         }
     });
 
+    document.getElementById('btn-admin-force-lvlup').addEventListener('click', () => {
+        levelUp();
+        showNotification("Nivel forzado +1 aplicado.");
+    });
+
     document.getElementById('btn-admin-give-exp').addEventListener('click', () => {
         const val = parseInt(document.getElementById('adminGiveExpValue').value);
         if(val > 0) gainExp(val);
@@ -43,6 +49,15 @@ export function setupAdminListeners() {
             Game.player.col += val;
             updatePlayerHUD();
             showNotification(`+${val} Col`);
+        }
+    });
+
+    document.getElementById('btn-admin-grant-item').addEventListener('click', () => {
+        const itemId = document.getElementById('adminItemIdValue').value.trim();
+        const count = parseInt(document.getElementById('adminItemCountValue').value) || 1;
+        if(itemId) {
+            addItemToInventory({ id: itemId }, count);
+            showNotification(`Admin: ${itemId} x${count} agregado.`);
         }
     });
 }
