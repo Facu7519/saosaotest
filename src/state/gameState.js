@@ -18,6 +18,7 @@ export const Game = {
         inventory: [],
         equipment: {
             weapon: null,
+            weapon2: null, // New Dual Wield Slot
             shield: null,
             armor: null,
             accessory: null
@@ -45,6 +46,7 @@ export const Game = {
         isBoss: false, 
         playerTurn: true,
         turnCount: 0, 
+        drops: [] // Store drops for victory screen
     },
     settings: {
         musicVolume: 0.3,

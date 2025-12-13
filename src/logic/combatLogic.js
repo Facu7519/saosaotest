@@ -57,7 +57,8 @@ function startCombat(mobTemplate, isBoss) {
         enemy: enemy,
         isBoss: isBoss,
         playerTurn: true,
-        turnCount: 0
+        turnCount: 0,
+        drops: [] // Reset drops
     };
     
     Game.player.attackComboCount = 0;
@@ -77,26 +78,30 @@ export function showCombatOptions(type) {
     const skillContainer = document.getElementById('combat-skills-list-container');
     const potionContainer = document.getElementById('combat-potions-list-container');
     
+    // Toggle logic
+    const isSkillsVisible = skillContainer.style.display === 'flex';
+    const isPotionsVisible = potionContainer.style.display === 'flex';
+
     skillContainer.style.display = 'none';
     potionContainer.style.display = 'none';
 
     if (type === 'skills') {
+        if (isSkillsVisible) return; // Toggle Off
+
         skillContainer.innerHTML = '';
-        // Filter unlocked ACTIVE skills
         const skills = Object.entries(Game.player.unlockedSkills)
             .map(([id, level]) => ({ id, level, ...skillDatabase[id] }))
             .filter(s => s.type === 'active');
         
         if (skills.length === 0) {
-            skillContainer.innerHTML = '<p>No tienes habilidades activas desbloqueadas.</p>';
+            skillContainer.innerHTML = '<p style="width:100%; text-align:center;">No tienes habilidades activas.</p>';
         } else {
             skills.forEach(skill => {
                 const currentMpCost = skill.mpCost + (skill.mpGrowth * (skill.level - 1));
                 const btn = document.createElement('button');
-                btn.className = 'action-btn';
-                btn.textContent = `${skill.name} (${currentMpCost} MP)`;
+                btn.className = 'combat-sub-btn'; // Updated Class
+                btn.innerHTML = `<span class="icon">${skill.icon}</span> ${skill.name} <span class="cost">${currentMpCost} MP</span>`;
                 
-                // Check requirements (e.g., dual wield needs check, but for simplicity we rely on unlock)
                 const canUse = Game.player.mp >= currentMpCost;
                 btn.disabled = !canUse;
                 
@@ -106,16 +111,22 @@ export function showCombatOptions(type) {
         }
         skillContainer.style.display = 'flex';
     } else if (type === 'potions') {
-        // ... (Potion logic remains same) ...
+        if (isPotionsVisible) return; // Toggle Off
+
         potionContainer.innerHTML = '';
         const potions = Game.player.inventory.filter(i => (i.type === 'consumable' && (i.effect.hp || i.effect.mp)));
-        potions.forEach(item => {
-            const btn = document.createElement('button');
-            btn.className = 'action-btn';
-            btn.textContent = `${item.name} (x${item.count})`;
-            btn.onclick = () => performPotion(item);
-            potionContainer.appendChild(btn);
-        });
+        
+        if (potions.length === 0) {
+             potionContainer.innerHTML = '<p style="width:100%; text-align:center;">No tienes pociones.</p>';
+        } else {
+            potions.forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = 'combat-sub-btn potion';
+                btn.innerHTML = `<span class="icon">${item.icon}</span> ${item.name} <span class="cost">x${item.count}</span>`;
+                btn.onclick = () => performPotion(item);
+                potionContainer.appendChild(btn);
+            });
+        }
         potionContainer.style.display = 'flex';
     }
 }
@@ -125,11 +136,9 @@ function performSkill(skill) {
     if (Game.player.mp < currentMpCost) return;
     Game.player.mp -= currentMpCost;
     
-    // Calculate Damage
     const levelFactor = (skill.growthPct * (skill.level - 1));
     const totalMultiplier = skill.baseDamagePct + levelFactor;
     
-    // Get Passive Bonuses
     let passiveAtkBonus = 1;
     if (Game.player.unlockedSkills['fighting_spirit']) {
         const lvl = Game.player.unlockedSkills['fighting_spirit'];
@@ -140,15 +149,16 @@ function performSkill(skill) {
     const rawDmg = Math.max(1, (Game.player.effectiveAttack * passiveAtkBonus * totalMultiplier) - Game.currentCombat.enemy.defense);
     const damage = Math.floor(rawDmg);
     
-    // Trigger Animation
+    // Hide menus
+    document.getElementById('combat-skills-list-container').style.display = 'none';
+
     triggerSkillAnimation(skill.animClass, skill.hits);
 
-    // Apply Damage
     setTimeout(() => {
         addCombatLog(`✨ ${skill.name}! (${skill.hits} golpes)`, 'player-action');
         dealDamage(damage, Game.currentCombat.enemy, 'player', skill.hits);
         if (Game.currentCombat.enemy.currentHp > 0) endTurn();
-    }, 600); // Wait for anim start
+    }, 600);
 }
 
 function triggerSkillAnimation(animClass, hits = 1) {
@@ -157,16 +167,12 @@ function triggerSkillAnimation(animClass, hits = 1) {
     if (!layer || !enemyEl) return;
     
     const rect = enemyEl.getBoundingClientRect();
-    
-    // Create visual element
     const animEl = document.createElement('div');
     animEl.className = `skill-anim ${animClass}`;
     animEl.style.left = `${rect.left + rect.width/2}px`;
     animEl.style.top = `${rect.top + rect.height/2}px`;
     
     layer.appendChild(animEl);
-    
-    // Shake effect on enemy
     enemyEl.classList.add('shake-violent');
     
     setTimeout(() => {
@@ -178,9 +184,21 @@ function triggerSkillAnimation(animClass, hits = 1) {
 function performPotion(item) {
     const idx = Game.player.inventory.findIndex(i => i.id === item.id);
     if (idx !== -1) {
+        // Visual feedback on player
+        const playerEl = document.getElementById('combat-player-display');
+        playerEl.classList.add('heal-flash');
+        
+        showFloatingText("Heal!", playerEl, { type: 'heal' });
+
         useConsumable(Game.player.inventory[idx], idx);
         addCombatLog(`🧪 Usaste ${item.name}.`, 'player-action');
-        endTurn();
+        
+        document.getElementById('combat-potions-list-container').style.display = 'none';
+        
+        setTimeout(() => {
+            playerEl.classList.remove('heal-flash');
+            endTurn();
+        }, 500);
     }
 }
 
@@ -199,7 +217,6 @@ export function combatAction(actionType) {
             if (Game.currentCombat.enemy.currentHp > 0) endTurn();
         }, 300);
     } else if (actionType === 'flee') {
-        // ... same as before
         endCombat(false, true);
     }
 }
@@ -207,22 +224,22 @@ export function combatAction(actionType) {
 function dealDamage(amount, target, source, hits = 1) {
     const isPlayerTarget = (source === 'enemy');
     
-    // Apply damage
     if (isPlayerTarget) {
         Game.player.hp = Math.max(0, Game.player.hp - amount);
         Game.player.attackComboCount = 0;
+        document.getElementById('combat-player-display').classList.add('damage-flash');
+        setTimeout(()=>document.getElementById('combat-player-display').classList.remove('damage-flash'), 200);
     } else {
         target.currentHp = Math.max(0, target.currentHp - amount);
         Game.player.attackComboCount += hits;
+        document.getElementById('combat-enemy-display').classList.add('damage-flash');
+        setTimeout(()=>document.getElementById('combat-enemy-display').classList.remove('damage-flash'), 200);
     }
     
     updateComboDisplay();
     updateCombatUI();
 
     const displayEl = isPlayerTarget ? document.getElementById('combat-player-display') : document.getElementById('combat-enemy-display');
-    
-    // Floating Text (Summed up or individual?)
-    // For heavy skills, show Total
     showFloatingText(`-${amount}`, displayEl, { 
         type: 'damage', 
         shaky: amount > 50,
@@ -248,22 +265,19 @@ function updateComboDisplay() {
 }
 
 function processStatusEffects(entity, isPlayer) {
-    // Process Regen Passives
     if (isPlayer && Game.player.unlockedSkills['battle_healing']) {
         const lvl = Game.player.unlockedSkills['battle_healing'];
         const data = skillDatabase['battle_healing'];
         const heal = data.baseEffect + (data.growthEffect * (lvl - 1));
-        Game.player.hp = Math.min(Game.player.maxHp, Game.player.hp + heal);
-        showFloatingText(`+${heal}`, document.getElementById('combat-player-display'), { type: 'heal' });
+        if (Game.player.hp < Game.player.maxHp) {
+             Game.player.hp = Math.min(Game.player.maxHp, Game.player.hp + heal);
+             showFloatingText(`+${Math.floor(heal)}`, document.getElementById('combat-player-display'), { type: 'heal' });
+        }
     }
-    // ... existing status effect logic ...
 }
 
 function endTurn() {
     Game.currentCombat.playerTurn = false;
-    document.getElementById('combat-skills-list-container').style.display = 'none';
-    document.getElementById('combat-potions-list-container').style.display = 'none';
-    
     processStatusEffects(Game.player, true);
     updateCombatUI();
 
@@ -273,7 +287,6 @@ function endTurn() {
 }
 
 function enemyTurn() {
-    // Basic AI
     if(!Game.currentCombat.active) return;
     const enemy = Game.currentCombat.enemy;
     const damage = Math.floor(Math.max(1, enemy.attack - Game.player.effectiveDefense));
@@ -287,31 +300,29 @@ function enemyTurn() {
     }
 }
 
-// ... endCombat, renderEndScreen, updateCombatUI functions remain largely similar but utilize new data ...
 function updateCombatUI() {
     const p = Game.player;
     const e = Game.currentCombat.enemy;
     if(!e) return;
     
-    // Player
     document.getElementById('combat-player-hp-current').textContent = Math.floor(p.hp);
     document.getElementById('combat-player-hp-max').textContent = p.maxHp;
     const pHpBar = document.getElementById('combat-player-hp-bar');
     pHpBar.style.width = `${Math.max(0, (p.hp/p.maxHp)*100)}%`;
     
-    // Enemy
     document.getElementById('combat-enemy-hp-current').textContent = Math.floor(e.currentHp);
     document.getElementById('combat-enemy-hp-max').textContent = e.hp;
     const eHpBar = document.getElementById('combat-enemy-hp-bar-fill');
     eHpBar.style.width = `${Math.max(0, (e.currentHp/e.hp)*100)}%`;
 
-    // Active Turn Highlight
     if(Game.currentCombat.playerTurn) {
         document.getElementById('combat-player-display').classList.add('active-turn');
         document.getElementById('combat-enemy-display').classList.remove('active-turn');
+        document.querySelector('.combat-actions').classList.remove('disabled-actions');
     } else {
         document.getElementById('combat-player-display').classList.remove('active-turn');
         document.getElementById('combat-enemy-display').classList.add('active-turn');
+        document.querySelector('.combat-actions').classList.add('disabled-actions');
     }
 }
 
@@ -323,9 +334,9 @@ function addCombatLog(msg, type) {
     log.appendChild(p);
     log.scrollTop = log.scrollHeight;
 }
+
 function endCombat(win, fled){
      Game.currentCombat.active = false;
-     Game.player.attackComboCount = 0;
      const modalContent = document.querySelector('#combatModal .modal-content');
      
      if (fled) {
@@ -335,35 +346,88 @@ function endCombat(win, fled){
      }
 
      if (win) {
-         modalContent.classList.add('combat-victory');
          const enemy = Game.currentCombat.enemy;
+         modalContent.classList.add('combat-victory');
+         
+         // Process Drops
+         const earnedDrops = [];
+         if (enemy.drops) {
+             Object.entries(enemy.drops).forEach(([itemId, chance]) => {
+                 if (Math.random() < chance) {
+                     addItemToInventory({ id: itemId }, 1);
+                     earnedDrops.push(itemId);
+                 }
+             });
+         }
+         
+         Game.currentCombat.drops = earnedDrops;
          gainExp(enemy.exp);
          Game.player.col += enemy.col;
-         
-         // Chance to drop items...
-         
+
          setTimeout(() => {
              modalContent.classList.remove('combat-victory');
-             renderEndScreen(true);
-         }, 1000);
+             renderEndScreen(true, enemy);
+         }, 1200);
      } else {
          modalContent.classList.add('combat-defeat');
          Game.player.hp = Math.floor(Game.player.maxHp * 0.1);
          setTimeout(() => {
              modalContent.classList.remove('combat-defeat');
-             renderEndScreen(false);
-         }, 1000);
+             renderEndScreen(false, Game.currentCombat.enemy);
+         }, 1200);
      }
 }
 
-function renderEndScreen(win) {
+function renderEndScreen(win, enemy) {
     const activeView = document.getElementById('combat-active-view');
     const resultView = document.getElementById('combat-results-view');
     activeView.style.display = 'none';
     resultView.style.display = 'block';
     
+    // Clear previous results
+    resultView.innerHTML = '';
+
+    const drops = Game.currentCombat.drops || [];
+    let dropHtml = '';
+    if (drops.length > 0) {
+        dropHtml = drops.map(id => {
+            // Simple mapping or importing items would be circular, simple text for now or passed from main
+            return `<div class="loot-item">📦 ${id}</div>`;
+        }).join('');
+    } else {
+        dropHtml = '<div class="loot-empty">Sin objetos obtenidos</div>';
+    }
+
     resultView.innerHTML = `
-        <h2 class="result-title ${win ? 'result-victory' : 'result-defeat'}">${win ? 'VICTORIA' : 'DERROTA'}</h2>
-        <button class="action-btn" onclick="document.getElementById('combatModal').style.display='none'">Cerrar</button>
+        <div class="result-card ${win ? 'victory' : 'defeat'}">
+            <h2 class="result-title">${win ? '¡VICTORIA!' : 'DERROTA...'}</h2>
+            
+            <div class="result-stats-container">
+                <div class="result-row">
+                    <span class="label">Enemigo</span>
+                    <span class="value">${enemy.name}</span>
+                </div>
+                ${win ? `
+                <div class="result-row">
+                    <span class="label">Experiencia</span>
+                    <span class="value exp">+${enemy.exp} EXP</span>
+                </div>
+                <div class="result-row">
+                    <span class="label">Col (Dinero)</span>
+                    <span class="value col">+${enemy.col} Col</span>
+                </div>
+                <div class="result-drops">
+                    <h3>Botín</h3>
+                    <div class="drops-grid">${dropHtml}</div>
+                </div>
+                ` : `
+                <div class="result-row">
+                    <span class="value" style="color:#bbb">Has sido revivido en el pueblo más cercano.</span>
+                </div>
+                `}
+            </div>
+
+            <button class="action-btn large-btn" onclick="document.getElementById('combatModal').style.display='none'">Continuar Aventura</button>
+        </div>
     `;
 }

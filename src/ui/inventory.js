@@ -31,8 +31,8 @@ export function renderInventory() {
             if (base.type === 'consumable') {
                 const idx = Game.player.inventory.findIndex(it => it.id === item.id);
                 if (idx !== -1) {
-                    useConsumable(Game.player.inventory[idx], idx);
-                    renderInventory(); // Real-time update
+                    const success = useConsumable(Game.player.inventory[idx], idx);
+                    if(success) renderInventory();
                 }
             } else {
                 showNotification(`${base.name}: Material de forja. Tienes ${s.count}.`);
@@ -47,8 +47,8 @@ export function renderInventory() {
         el.onclick = () => {
              if (['weapon','shield','armor','accessory'].includes(base.type)) {
                 equipItemByUid(item.uid);
-                renderInventory(); // Real-time update
-                renderEquipment(); // Real-time update
+                renderInventory(); 
+                renderEquipment(); 
             }
         };
         grid.appendChild(el);
@@ -81,12 +81,35 @@ function createItemCard(base, count, level, stats) {
 }
 
 export function renderEquipment() {
-    ['weapon', 'shield', 'armor', 'accessory'].forEach(slot => {
-        const el = document.getElementById(`equip-${slot}`);
-        const item = Game.player.equipment[slot];
-        
+    const slotsContainer = document.querySelector('.equipment-slots');
+    
+    // Dynamic Render Logic for Slots to support Dual Wield conditional rendering
+    const slotsToRender = [
+        { key: 'weapon', label: 'Mano Derecha' },
+        { key: 'shield', label: 'Mano Izquierda' },
+        { key: 'armor', label: 'Torso' },
+        { key: 'accessory', label: 'Accesorio' }
+    ];
+
+    // Check Dual Wield
+    const hasDualWield = Game.player.unlockedSkills['dual_wield'];
+    
+    // Clear existing HTML in container to rebuild correct order
+    slotsContainer.innerHTML = '';
+
+    // If Dual Wield, insert weapon2 slot after weapon
+    if (hasDualWield) {
+        slotsToRender.splice(1, 0, { key: 'weapon2', label: 'Mano Izquierda (Dual)', special: true });
+    }
+
+    slotsToRender.forEach(slotDef => {
+        // Create element if not exists logic is hard with direct innerHTML clear, so we rebuild.
+        const el = document.createElement('div');
+        el.id = `equip-${slotDef.key}`;
         el.className = 'equipment-slot sao-electric-hover';
-        el.innerHTML = ''; // Clear previous
+        if (slotDef.special) el.classList.add('dual-wield-slot');
+
+        const item = Game.player.equipment[slotDef.key];
 
         if (item) {
             const base = baseItems[item.id] || item;
@@ -105,17 +128,23 @@ export function renderEquipment() {
             `;
             
             el.onclick = () => {
-                unequipItem(slot);
-                renderInventory(); // Real-time update
-                renderEquipment(); // Real-time update
+                unequipItem(slotDef.key);
+                renderInventory(); 
+                renderEquipment(); 
             };
         } else {
             el.classList.add('empty');
+            // If dual wield slot is displayed but shield is equipped, shield takes visual precedence in 'shield' slot, 
+            // but here we render both slots in UI so player sees options.
+            // However, shield slot should probably look disabled if weapon2 is equipped? 
+            // For simplicity, we just allow unequip.
+            
             el.innerHTML = `
                 <div class="slot-placeholder">∅</div>
-                <span class="slot-label">${slot}</span>
+                <span class="slot-label">${slotDef.label}</span>
             `;
             el.onclick = null;
         }
+        slotsContainer.appendChild(el);
     });
 }

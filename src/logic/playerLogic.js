@@ -33,7 +33,7 @@ export function calculateEffectiveStats() {
 }
 
 export function trainPlayer() {
-    // Replaced by Skill Tree, but kept for basic stat boosting if desired
+    // Replaced by Skill Tree
     openModal('skillsModal');
     return false;
 }
@@ -41,7 +41,7 @@ export function trainPlayer() {
 export function gainExp(amount) {
     if (Game.player.hp <= 0) return;
     Game.player.currentExp += amount;
-    showNotification(`+${amount} EXP`, "success");
+    // Notification moved to end screen usually, but kept for realtime updates if needed
     while (Game.player.currentExp >= Game.player.neededExp) {
         levelUp();
     }
@@ -104,13 +104,39 @@ export function equipItemByUid(uid) {
         return;
     }
 
-    const slot = base.slot;
+    let slot = base.slot;
+    
+    // Logic for Dual Wield
+    if (slot === 'weapon' && Game.player.unlockedSkills['dual_wield']) {
+        // If main hand is full, and we are trying to equip another weapon, put it in weapon2
+        if (Game.player.equipment.weapon) {
+            // Check if shield is equipped (can't have shield + dual wield usually, assuming dual wield replaces shield slot logic)
+            if (Game.player.equipment.shield) {
+                unequipItem('shield');
+                showNotification("Escudo desequipado para usar doble espada.", "default");
+            }
+            if (!Game.player.equipment.weapon2) {
+                slot = 'weapon2';
+            } else {
+                // Both slots full, replace main hand for now (simplest UX without drag/drop)
+                unequipItem('weapon'); 
+            }
+        }
+    }
+    
+    // Logic: Shield cannot coexist with Weapon 2
+    if (slot === 'shield' && Game.player.equipment.weapon2) {
+        unequipItem('weapon2');
+        showNotification("Segunda espada desequipada.", "default");
+    }
+
     if (Game.player.equipment[slot]) {
         unequipItem(slot); 
     }
 
+    // Move from inventory to equipment
     Game.player.equipment[slot] = Game.player.inventory.splice(idx, 1)[0];
-    showNotification(`${base.name} equipado.`, "success");
+    showNotification(`${base.name} equipado en ${slot === 'weapon2' ? 'Mano Izquierda' : 'Mano Derecha'}.`, "success");
     calculateEffectiveStats();
     updatePlayerHUD();
 }
@@ -120,19 +146,40 @@ export function unequipItem(slot) {
     if (!item) return;
     Game.player.equipment[slot] = null;
     Game.player.inventory.push(item);
-    showNotification("Item desequipado.", "default");
+    // showNotification("Item desequipado.", "default"); // Reduced spam
     calculateEffectiveStats();
     updatePlayerHUD();
 }
 
 export function useConsumable(item, index) {
     const base = baseItems[item.id] || item;
-    if (base.effect.hp) Game.player.hp = Math.min(Game.player.hp + base.effect.hp, Game.player.maxHp);
-    if (base.effect.mp) Game.player.mp = Math.min(Game.player.mp + base.effect.mp, Game.player.maxMp);
-    
-    item.count--;
-    if (item.count <= 0) Game.player.inventory.splice(index, 1);
-    
-    showNotification(`Usado ${base.name}`, "success");
-    updatePlayerHUD();
+    let used = false;
+
+    if (base.effect.hp && Game.player.hp < Game.player.maxHp) {
+        Game.player.hp = Math.min(Game.player.hp + base.effect.hp, Game.player.maxHp);
+        used = true;
+    }
+    if (base.effect.mp && Game.player.mp < Game.player.maxMp) {
+        Game.player.mp = Math.min(Game.player.mp + base.effect.mp, Game.player.maxMp);
+        used = true;
+    }
+    if (base.effect.cure) {
+        // Logic to remove status
+        const idx = Game.player.activeStatusEffects.findIndex(e => e.type === base.effect.cure);
+        if(idx !== -1) {
+            Game.player.activeStatusEffects.splice(idx, 1);
+            used = true;
+        }
+    }
+
+    if (used) {
+        item.count--;
+        if (item.count <= 0) Game.player.inventory.splice(index, 1);
+        showNotification(`Usado ${base.name}`, "success");
+        updatePlayerHUD();
+        return true;
+    } else {
+        showNotification("No tiene efecto ahora.", "default");
+        return false;
+    }
 }

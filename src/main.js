@@ -32,6 +32,8 @@ function initGame() {
                  Game.player.unlockedSkills = { 'sonic_leap': 1 };
                  Game.player.skillPoints = Game.player.level * 2; // Retroactive SP
             }
+            // Compatibility for Dual Wield
+            if (!Game.player.equipment.weapon2) Game.player.equipment.weapon2 = null;
 
             calculateEffectiveStats();
             Game.player.unlockedFloors.forEach(f => {
@@ -114,17 +116,24 @@ function setupEventListeners() {
     bind('music-toggle-btn', () => {
         const audio = document.getElementById('background-music');
         const btn = document.getElementById('music-toggle-btn');
+        
         if (audio.paused) {
-            audio.play().then(() => {
-                btn.textContent = "🔊 Pausar Música";
-                showNotification("Música activada", "default", 2000);
-            }).catch(e => {
-                console.warn("Audio autoplay blocked", e);
-                showNotification("Error: Interactúa con la página primero", "error");
-            });
+            const playPromise = audio.play();
+            if (playPromise !== undefined) {
+                playPromise.then(_ => {
+                    btn.textContent = "🔊 Pausar Música";
+                    btn.style.color = "#00ffff"; // Active color
+                    btn.style.borderColor = "#00ffff";
+                }).catch(error => {
+                    console.warn("Autoplay prevented:", error);
+                    showNotification("Interacción requerida para audio.", "error");
+                });
+            }
         } else {
             audio.pause();
-            btn.textContent = "🔊 Música";
+            btn.textContent = "🔇 Activar Música";
+            btn.style.color = "#87ceeb"; // Inactive/default color
+            btn.style.borderColor = "#87ceeb";
         }
     });
 
