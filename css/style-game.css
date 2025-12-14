@@ -405,6 +405,7 @@ div.shop-item.rarity-common.common::after { display: none !important; }
 .admin-section {
     flex: 1 1 300px; background: rgba(25, 28, 40, 0.8);
     padding: 20px; border-radius: 10px; border: 1px solid rgba(70, 130, 180, 0.3);
+    min-height: 250px;
 }
 .admin-section h3 { color: #a1d8ff; margin-bottom: 15px; }
 .admin-section input {
@@ -415,6 +416,31 @@ div.shop-item.rarity-common.common::after { display: none !important; }
     margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.5); 
     border-radius: 5px; color: #5cb85c; text-align: center;
 }
+
+/* Admin Dashboard Items */
+.admin-dashboard-tabs { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+.admin-tab { 
+    background: #2a2a3a; border: 1px solid #445; padding: 8px 12px; cursor: pointer; color: #aaa; border-radius: 5px;
+}
+.admin-tab.active { background: #4a90e2; color: #fff; border-color: #4a90e2; }
+.admin-items-grid { 
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 8px; 
+    max-height: 300px; overflow-y: auto; padding: 5px;
+}
+.admin-item-btn {
+    background: #1a1a25; border: 1px solid #334; border-radius: 5px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 5px; height: 60px; font-size: 0.7rem; transition: all 0.2s;
+}
+.admin-item-btn:hover { background: #334; border-color: #87ceeb; }
+.admin-item-btn span { font-size: 1.5rem; margin-bottom: 2px; }
+
+/* Admin Floors */
+.admin-floors-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+.admin-floor-btn {
+    padding: 10px; background: #222; border: 1px solid #444; color: #777; cursor: pointer; border-radius: 5px;
+}
+.admin-floor-btn.unlocked { background: #4a90e2; color: #fff; border-color: #00ffff; }
 
 /* Input Names Modal */
 #playerNameInput, #adminKeyValue {
@@ -430,6 +456,11 @@ div.shop-item.rarity-common.common::after { display: none !important; }
 #combat-active-view {
     position: relative;
     padding-bottom: 2rem;
+    transition: opacity 0.5s ease;
+}
+#combat-active-view.fade-out-active {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .combat-arena {
@@ -516,6 +547,15 @@ div.shop-item.rarity-common.common::after { display: none !important; }
 .floating-text.animate { animation: floatUpFade 900ms cubic-bezier(.2,.9,.2,1) forwards; }
 .floating-text.shaky { animation: floatShake 850ms cubic-bezier(.25,.8,.25,1) forwards; }
 
+/* Modal Shake Update - Applies to .modal-content, not body or modal wrapper */
+.shake-modal { animation: shakeModal 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes shakeModal {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
 .screen-shake { animation: screenShake 450ms ease-in-out; }
 @keyframes screenShake {
     0% { transform: translate(0,0); }
@@ -594,6 +634,15 @@ div.shop-item.rarity-common.common::after { display: none !important; }
 #combat-results-view {
     text-align: center; padding: 2rem;
 }
+/* New Class for Entrance Animation */
+.fade-in-result {
+    animation: fadeInResult 0.6s ease-out forwards;
+}
+@keyframes fadeInResult {
+    from { opacity: 0; transform: scale(1.1); }
+    to { opacity: 1; transform: scale(1); }
+}
+
 .result-title {
     font-size: 4rem; margin-bottom: 2rem;
     font-family: 'Exo 2', sans-serif; font-weight: 800; text-transform: uppercase;
@@ -603,7 +652,8 @@ div.shop-item.rarity-common.common::after { display: none !important; }
     background: rgba(15, 20, 30, 0.8); border: 2px solid #333;
     border-radius: 15px; padding: 2rem;
     box-shadow: 0 0 50px rgba(0,0,0,0.7);
-    animation: zoomIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    /* Remove default animation here, let parent handle it */
+    /* animation: zoomIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); */
 }
 .result-card.victory { border-color: #ffd700; box-shadow: 0 0 50px rgba(255, 215, 0, 0.2); }
 .result-card.defeat { border-color: #ff4d4d; box-shadow: 0 0 50px rgba(255, 77, 77, 0.2); }

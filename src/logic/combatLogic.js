@@ -44,8 +44,15 @@ export function initCombat(isBossFight) {
 function startCombat(mobTemplate, isBoss) {
     closeModal('mobSelectionModal');
     
-    document.getElementById('combat-active-view').style.display = 'block';
-    document.getElementById('combat-results-view').style.display = 'none';
+    const activeView = document.getElementById('combat-active-view');
+    const resultView = document.getElementById('combat-results-view');
+    
+    // Reset view states & classes for fresh combat
+    activeView.style.display = 'block';
+    activeView.classList.remove('fade-out-active');
+    resultView.style.display = 'none';
+    resultView.classList.remove('fade-in-result');
+    document.querySelector('#combatModal .modal-content').classList.remove('combat-victory', 'combat-defeat', 'shake-modal');
 
     const enemy = JSON.parse(JSON.stringify(mobTemplate));
     enemy.currentHp = enemy.hp;
@@ -262,7 +269,7 @@ function dealDamageResult(hitResult, target, source, hits = 1) {
     // Floating Text Logic
     if (hitResult.isCrit) {
         showFloatingText(`CRIT! -${amount}`, displayEl, { type: 'crit', large: true, shaky: true });
-        // Optional: Screen Shake on Player Crit
+        // Screen Shake on Player Crit or Heavy Hit
         if (!isPlayerTarget) document.body.classList.add('screen-shake');
         setTimeout(()=> document.body.classList.remove('screen-shake'), 450);
     } else {
@@ -380,17 +387,25 @@ function triggerSkillAnimation(animClass, hits = 1) {
     animEl.style.top = `${rect.top + rect.height/2}px`;
     
     layer.appendChild(animEl);
-    enemyEl.classList.add('shake-violent');
+    enemyEl.classList.add('shake-violent'); // CSS animation for element shake
     
+    // Apply Modal Shake on heavy hits (skill usage)
+    const modalContent = document.querySelector('#combatModal .modal-content');
+    modalContent.classList.remove('shake-modal');
+    void modalContent.offsetWidth; // Force reflow
+    modalContent.classList.add('shake-modal');
+
     setTimeout(() => {
         if(animEl.parentNode) layer.removeChild(animEl);
         enemyEl.classList.remove('shake-violent');
+        modalContent.classList.remove('shake-modal');
     }, 1000);
 }
 
 function endCombat(win, fled){
      Game.currentCombat.active = false;
      const modalContent = document.querySelector('#combatModal .modal-content');
+     const activeView = document.getElementById('combat-active-view');
      
      if (fled) {
          showNotification("Huiste.", "default");
@@ -398,10 +413,15 @@ function endCombat(win, fled){
          return;
      }
 
+     // Visual flair immediately to indicate combat over
+     modalContent.classList.add(win ? 'combat-victory' : 'combat-defeat');
+
+     // Start Fade Out of Active View
+     activeView.classList.add('fade-out-active');
+
+     // Process logic
      if (win) {
          const enemy = Game.currentCombat.enemy;
-         modalContent.classList.add('combat-victory');
-         
          const earnedDrops = [];
          if (enemy.drops) {
              Object.entries(enemy.drops).forEach(([itemId, chance]) => {
@@ -416,27 +436,45 @@ function endCombat(win, fled){
          gainExp(enemy.exp);
          Game.player.col += enemy.col;
 
+         // Unlock Floor Logic
+         if (Game.currentCombat.isBoss) {
+             const nextFloor = Game.player.currentFloor + 1;
+             // Check if next floor exists in data
+             if (floorData[nextFloor]) {
+                 if (!Game.player.unlockedFloors.includes(nextFloor)) {
+                     Game.player.unlockedFloors.push(nextFloor);
+                     floorData[nextFloor].unlocked = true;
+                     showNotification(`¡Piso ${nextFloor} Desbloqueado!`, 'success', 8000);
+                 }
+             } else {
+                 showNotification("¡Has completado todo el contenido actual!", 'success', 10000);
+             }
+         }
+
+         // Wait for fade out (500ms CSS + buffer) before switching
          setTimeout(() => {
-             modalContent.classList.remove('combat-victory');
+             modalContent.classList.remove('combat-victory', 'combat-defeat');
              renderEndScreen(true, enemy);
-         }, 1200);
+         }, 600);
      } else {
-         modalContent.classList.add('combat-defeat');
          Game.player.hp = Math.floor(Game.player.maxHp * 0.1);
          setTimeout(() => {
-             modalContent.classList.remove('combat-defeat');
+             modalContent.classList.remove('combat-victory', 'combat-defeat');
              renderEndScreen(false, Game.currentCombat.enemy);
-         }, 1200);
+         }, 600);
      }
 }
 
 function renderEndScreen(win, enemy) {
     const activeView = document.getElementById('combat-active-view');
     const resultView = document.getElementById('combat-results-view');
-    activeView.style.display = 'none';
-    resultView.style.display = 'block';
     
+    activeView.style.display = 'none';
+    
+    // Setup Result View
     resultView.innerHTML = '';
+    resultView.style.display = 'block';
+    resultView.classList.add('fade-in-result'); // Trigger animation
 
     const drops = Game.currentCombat.drops || [];
     let dropHtml = '';
