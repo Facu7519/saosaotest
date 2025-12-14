@@ -1,6 +1,7 @@
 import { Game } from '../state/gameState.js';
 import { floorData } from '../data/floors.js';
 import { skillDatabase, statusEffects } from '../data/skills.js';
+import { baseItems } from '../data/items.js';
 import { showNotification, showFloatingText, playSfx } from '../utils/helpers.js';
 import { openModal, closeModal } from '../ui/modals.js';
 import { updatePlayerHUD } from '../ui/hud.js';
@@ -95,12 +96,16 @@ export function showCombatOptions(type) {
         if (isSkillsVisible) return; 
 
         skillContainer.innerHTML = '';
+        
+        // Filter skills: must be active AND present in equippedSkills list
+        const equippedIds = Game.player.equippedSkills || [];
         const skills = Object.entries(Game.player.unlockedSkills)
+            .filter(([id, level]) => equippedIds.includes(id)) // Only equipped
             .map(([id, level]) => ({ id, level, ...skillDatabase[id] }))
             .filter(s => s.type === 'active');
         
         if (skills.length === 0) {
-            skillContainer.innerHTML = '<p style="width:100%; text-align:center;">No tienes habilidades activas.</p>';
+            skillContainer.innerHTML = '<p style="width:100%; text-align:center;">No tienes habilidades equipadas.</p>';
         } else {
             skills.forEach(skill => {
                 const currentMpCost = skill.mpCost + (skill.mpGrowth * (skill.level - 1));
@@ -480,7 +485,15 @@ function renderEndScreen(win, enemy) {
     let dropHtml = '';
     if (drops.length > 0) {
         dropHtml = drops.map(id => {
-            return `<div class="loot-item">📦 ${id}</div>`;
+            const base = baseItems[id];
+            if (!base) return `<div class="loot-item">📦 ${id}</div>`;
+            
+            const rarity = base.rarity || 'Common';
+            return `
+            <div class="loot-card rarity-${rarity.toLowerCase()}">
+                <div class="loot-icon">${base.icon}</div>
+                <div class="loot-name">${base.name}</div>
+            </div>`;
         }).join('');
     } else {
         dropHtml = '<div class="loot-empty">Sin objetos obtenidos</div>';

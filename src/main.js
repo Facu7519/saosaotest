@@ -9,6 +9,7 @@ import { addItemToInventory, calculateEffectiveStats, trainPlayer } from './logi
 import { floorData } from './data/floors.js';
 import { renderUpgradeEquipmentList } from './logic/blacksmithLogic.js';
 import { initSkillsUI, renderSkillsGrid } from './ui/skillsUI.js';
+import { skillDatabase } from './data/skills.js';
 
 window.Game = Game;
 
@@ -31,6 +32,15 @@ function initGame() {
                  Game.player.unlockedSkills = { 'sonic_leap': 1 };
                  Game.player.skillPoints = Game.player.level * 2; // Retroactive SP
             }
+            
+            // Compatibility: Initialize equippedSkills if missing
+            if (!Game.player.equippedSkills) {
+                // Auto-equip all currently unlocked active skills (up to 4)
+                Game.player.equippedSkills = Object.keys(Game.player.unlockedSkills).filter(id => {
+                    return skillDatabase[id] && skillDatabase[id].type === 'active';
+                }).slice(0, 4);
+            }
+
             // Compatibility for Dual Wield
             if (!Game.player.equipment.weapon2) Game.player.equipment.weapon2 = null;
 

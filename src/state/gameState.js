@@ -37,6 +37,7 @@ export const Game = {
         unlockedSkills: {
             'sonic_leap': 1 // Default starting skill
         },
+        equippedSkills: ['sonic_leap'], // IDs of skills active in combat (Max 4)
         skillPoints: 0,
         
         materials: {},

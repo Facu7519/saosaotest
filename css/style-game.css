@@ -182,55 +182,107 @@
 .inventory-grid-container { flex: 2; }
 .player-equipment-container { flex: 1; min-width: 300px; }
 
+/* INVENTORY CONTROLS */
+.inv-controls {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);
+    flex-wrap: wrap; gap: 10px;
+}
+.inv-filter-group { display: flex; gap: 5px; }
+.inv-filter-btn {
+    background: transparent; border: 1px solid rgba(135, 206, 235, 0.3);
+    color: #a0b0d0; padding: 6px 12px; border-radius: 20px;
+    cursor: pointer; font-size: 0.85rem; transition: all 0.2s;
+}
+.inv-filter-btn:hover { border-color: #00ffff; color: #fff; }
+.inv-filter-btn.active {
+    background: rgba(0, 255, 255, 0.15); border-color: #00ffff;
+    color: #00ffff; box-shadow: 0 0 10px rgba(0,255,255,0.1);
+}
+.inv-sort-select {
+    background: rgba(10,15,25,0.8); border: 1px solid rgba(135,206,235,0.3);
+    color: #e0e0e0; padding: 6px 10px; border-radius: 6px; font-size: 0.9rem;
+}
+
+/* INVENTORY GRID */
 .inventory-grid {
     display: grid; 
     grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); 
-    gap: 10px;
-    padding: 15px; 
-    border-radius: 10px; 
+    gap: 12px;
+    padding: 5px; 
     max-height: 500px;
     overflow-y: auto; 
-    background: rgba(5, 8, 15, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
+/* INVENTORY CARDS */
 .inventory-item {
     background: rgba(35, 40, 60, 0.6);
-    border-radius: 6px; 
+    border-radius: 8px; 
     padding: 8px; 
     text-align: center;
     cursor: pointer; 
     position: relative;
-    display: flex; flex-direction: column; align-items: center; justify-content: space-between;
-    min-height: 120px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
     box-shadow: 0 4px 6px rgba(0,0,0,0.3);
 }
+.inventory-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.4);
+    border-color: #87CEEB;
+}
 
-.inventory-item .item-icon {
-    font-size: 2.2rem;
-    margin-bottom: 5px;
-    filter: drop-shadow(0 0 5px rgba(255,255,255,0.1));
+/* Stackable Items (Materials/Consumables) - Compact */
+.inventory-item.stackable {
+    min-height: 90px;
 }
-.inventory-item .item-name {
-    font-size: 0.8rem; line-height: 1.1; margin-bottom: 4px;
-    height: 32px; overflow: hidden; display: flex; align-items: center; justify-content: center;
+.inventory-item.stackable .item-icon { font-size: 1.8rem; margin-bottom: 2px; }
+.inventory-item.stackable .item-name-small { 
+    font-size: 0.75rem; line-height: 1.1; color: #b0c4de;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
-/* Updated Item Count Style */
-.inventory-item .item-count {
-    font-size: 0.9rem; 
-    color: #fff;
-    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
-    position: absolute; 
-    bottom: 6px; 
-    right: 8px; 
-    font-weight: 800;
-    font-family: 'Rajdhani', sans-serif;
-    pointer-events: none;
-    z-index: 2;
-    background: transparent;
-    padding: 0;
-    border: none;
+.inventory-item.stackable .item-count {
+    font-size: 0.85rem; color: #fff; font-weight: 800;
+    position: absolute; bottom: 4px; right: 6px;
+    text-shadow: 1px 1px 0 #000;
 }
+
+/* Equipment Items - Taller, detailed */
+.inventory-item.equipment {
+    grid-column: span 2; /* Span 2 columns if grid supports it, else ignored */
+    min-height: 120px;
+    background: linear-gradient(160deg, rgba(40,45,65,0.7), rgba(25,30,45,0.8));
+    justify-content: space-between;
+    padding: 10px;
+}
+/* Ensure grid allows spanning or adjust width */
+@media (min-width: 400px) {
+    .inventory-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+    .inventory-item.equipment { grid-column: auto; } /* Reset span */
+}
+
+.inventory-item.equipment .item-icon { font-size: 2.5rem; margin-top: 10px; filter: drop-shadow(0 0 5px rgba(255,255,255,0.2)); }
+.inventory-item.equipment .item-name { 
+    font-size: 0.9rem; font-weight: bold; color: #e0e0e0; margin: 5px 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+}
+.inventory-item.equipment .equip-level-badge {
+    position: absolute; top: 5px; left: 5px;
+    background: rgba(0,0,0,0.6); padding: 2px 5px; border-radius: 4px;
+    font-size: 0.65rem; color: #87ceeb; border: 1px solid rgba(135,206,235,0.3);
+}
+.inventory-item.equipment .item-stats-preview {
+    font-size: 0.75rem; color: #aaa; margin-top: auto;
+}
+
+/* Rarezas Colors for Equipment Borders */
+.inventory-item.rarity-common { border-color: rgba(204,204,204,0.3); }
+.inventory-item.rarity-rare { border-color: rgba(135, 206, 235, 0.5); background: linear-gradient(160deg, rgba(40,55,75,0.7), rgba(25,35,50,0.8)); }
+.inventory-item.rarity-epic { border-color: rgba(177, 156, 217, 0.5); background: linear-gradient(160deg, rgba(50,40,65,0.7), rgba(35,25,45,0.8)); }
+.inventory-item.rarity-mythic { border-color: rgba(255, 77, 77, 0.5); background: linear-gradient(160deg, rgba(60,30,30,0.7), rgba(40,20,20,0.8)); }
+
+.inventory-item[data-rarity="Mythic"] .item-name { color: #ff6b6b; text-shadow: 0 0 5px rgba(255,0,0,0.3); }
 
 /* Equipment Slots */
 .player-equipment h3 { text-align: center; color: #a1d8ff; margin-bottom: 15px; letter-spacing: 1px; }
@@ -682,11 +734,51 @@ div.shop-item.rarity-common.common::after { display: none !important; }
 
 .result-drops { margin-top: 1rem; text-align: left; }
 .result-drops h3 { font-size: 1rem; color: #aaa; margin-bottom: 0.5rem; text-transform: uppercase; }
-.drops-grid { display: flex; flex-wrap: wrap; gap: 10px; }
-.loot-item {
-    background: rgba(50, 60, 80, 0.5); padding: 5px 10px; border-radius: 4px; font-size: 0.9rem;
+.drops-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+
+/* Visual Loot Cards */
+.loot-card {
+    background: rgba(30, 35, 50, 0.8);
     border: 1px solid rgba(100, 150, 200, 0.3);
+    border-radius: 8px; padding: 10px; 
+    min-width: 100px;
+    display: flex; flex-direction: column; align-items: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    animation: fadeInUp 0.5s ease-out;
 }
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.loot-card .loot-icon { font-size: 2rem; margin-bottom: 5px; }
+.loot-card .loot-name { font-size: 0.85rem; color: #e0e0e0; font-weight: bold; text-align: center; }
+
+.loot-card.rarity-common { border-color: #aaa; }
+
+.loot-card.rarity-rare {
+    background: linear-gradient(135deg, rgba(30, 40, 60, 0.9), rgba(40, 70, 100, 0.8));
+    border-color: #87ceeb;
+    box-shadow: 0 0 15px rgba(135, 206, 235, 0.3);
+}
+.loot-card.rarity-epic {
+    background: linear-gradient(135deg, rgba(40, 30, 60, 0.9), rgba(70, 40, 90, 0.8));
+    border-color: #b19cd9;
+    box-shadow: 0 0 15px rgba(177, 156, 217, 0.4);
+}
+.loot-card.rarity-mythic {
+    background: linear-gradient(135deg, rgba(60, 20, 20, 0.9), rgba(100, 40, 40, 0.8));
+    border-color: #ff4d4d;
+    box-shadow: 0 0 20px rgba(255, 77, 77, 0.5);
+    animation: fadeInUp 0.5s ease-out, mythicPulse 2s infinite alternate;
+}
+
+@keyframes mythicPulse {
+    from { box-shadow: 0 0 15px rgba(255, 77, 77, 0.4); border-color: #ff4d4d; }
+    to { box-shadow: 0 0 25px rgba(255, 77, 77, 0.7); border-color: #ff9999; }
+}
+
+.loot-empty { color: #888; font-style: italic; width: 100%; text-align: center; padding: 10px; }
 
 @media (max-width: 768px) {
     .action-buttons { flex-direction: column; align-items: center; }
@@ -766,6 +858,14 @@ div.shop-item.rarity-common.common::after { display: none !important; }
 .skill-card.unlocked { border-color: #00ffff; box-shadow: 0 0 15px rgba(0,255,255,0.1); }
 .skill-card.locked { opacity: 0.6; filter: grayscale(1); }
 .skill-card.purchasable { border-color: #ffd700; opacity: 1; filter: none; }
+.skill-card.equipped { border-color: #7CFC00; box-shadow: 0 0 20px rgba(124, 252, 0, 0.2); }
+
+.equipped-badge-text {
+    position: absolute; top: 10px; right: 10px;
+    background: #7CFC00; color: #000; font-weight: bold;
+    font-size: 0.7rem; padding: 2px 6px; border-radius: 4px;
+    z-index: 10;
+}
 
 .skill-icon-frame {
     font-size: 2.5rem; background: rgba(0,0,0,0.3);
@@ -785,11 +885,17 @@ div.shop-item.rarity-common.common::after { display: none !important; }
     width: 100%; padding: 8px; border: none; border-radius: 6px;
     font-weight: bold; cursor: pointer; transition: all 0.2s;
     font-family: 'Rajdhani', sans-serif; text-transform: uppercase;
+    margin-top: 5px;
 }
 .skill-btn.upgrade { background: #00bcd4; color: #000; }
 .skill-btn.unlock { background: #ffc107; color: #000; }
 .skill-btn.maxed { background: #4caf50; color: #fff; cursor: default; }
 .skill-btn.locked { background: #333; color: #666; cursor: not-allowed; }
+.skill-btn.equip { background: #2a2a3a; color: #fff; border: 1px solid #7CFC00; }
+.skill-btn.equip:hover { background: #7CFC00; color: #000; }
+.skill-btn.unequip { background: #ff6666; color: #fff; }
+.skill-btn.unequip:hover { background: #cc0000; }
+
 .skill-btn:hover:not(:disabled) { filter: brightness(1.2); transform: translateY(-2px); }
 
 /* --- COMBAT ANIMATIONS --- */

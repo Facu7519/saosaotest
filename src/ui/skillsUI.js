@@ -3,6 +3,7 @@ import { skillDatabase } from '../data/skills.js';
 import { showNotification } from '../utils/helpers.js';
 
 let currentCategory = 'sword_skills';
+const MAX_EQUIPPED = 4;
 
 export function initSkillsUI() {
     // Tab Listeners
@@ -24,36 +25,57 @@ export function renderSkillsGrid() {
     grid.innerHTML = '';
     spDisplay.textContent = Game.player.skillPoints;
 
+    // Ensure equipped array exists (safety)
+    if(!Game.player.equippedSkills) Game.player.equippedSkills = [];
+
+    const equippedCount = Game.player.equippedSkills.length;
+
+    // Show equipped count in header (optional, but good for UX)
+    // We can just append it to SP display if we want, or render a separate bar.
+    
     Object.entries(skillDatabase).forEach(([id, data]) => {
         if (data.category !== currentCategory) return;
 
         const currentLevel = Game.player.unlockedSkills[id] || 0;
         const isUnlocked = currentLevel > 0;
         const canUnlock = !isUnlocked && checkRequirements(id);
+        const isEquipped = Game.player.equippedSkills.includes(id);
         
         const card = document.createElement('div');
-        card.className = `skill-card ${isUnlocked ? 'unlocked' : 'locked'} ${canUnlock ? 'purchasable' : ''}`;
+        card.className = `skill-card ${isUnlocked ? 'unlocked' : 'locked'} ${canUnlock ? 'purchasable' : ''} ${isEquipped ? 'equipped' : ''}`;
         
         // Dynamic Cost Calculation
         const nextLevel = currentLevel + 1;
         const spCost = (data.cost || 1) + (currentLevel * 1); // Simple cost scaling
         const isMaxed = currentLevel >= data.maxLevel;
 
-        let btnHtml = '';
+        // Action Buttons Logic
+        let actionBtns = '';
+        
+        // 1. Upgrade/Unlock Button
         if (isMaxed) {
-            btnHtml = `<button class="skill-btn maxed" disabled>MAX</button>`;
+            actionBtns += `<button class="skill-btn maxed" disabled>MAX</button>`;
         } else if (isUnlocked) {
             const canAfford = Game.player.skillPoints >= spCost;
-            btnHtml = `<button class="skill-btn upgrade" ${canAfford ? '' : 'disabled'} onclick="window.upgradeSkill('${id}', ${spCost})">Mejorar (${spCost} SP)</button>`;
+            actionBtns += `<button class="skill-btn upgrade" ${canAfford ? '' : 'disabled'} onclick="window.upgradeSkill('${id}', ${spCost})">Mejorar (${spCost} SP)</button>`;
         } else if (canUnlock) {
             const canAfford = Game.player.skillPoints >= (data.cost || 1);
-            btnHtml = `<button class="skill-btn unlock" ${canAfford ? '' : 'disabled'} onclick="window.upgradeSkill('${id}', ${data.cost || 1})">Desbloquear (${data.cost || 1} SP)</button>`;
+            actionBtns += `<button class="skill-btn unlock" ${canAfford ? '' : 'disabled'} onclick="window.upgradeSkill('${id}', ${data.cost || 1})">Desbloquear (${data.cost || 1} SP)</button>`;
         } else {
-             // Locked Reason
              let reqText = '';
              if (data.levelReq && Game.player.level < data.levelReq) reqText = `Req: LV ${data.levelReq}`;
              else if (data.reqSkill) reqText = `Req: ${skillDatabase[data.reqSkill].name}`;
-             btnHtml = `<button class="skill-btn locked" disabled>Bloqueado (${reqText})</button>`;
+             actionBtns += `<button class="skill-btn locked" disabled>Bloqueado (${reqText})</button>`;
+        }
+
+        // 2. Equip/Unequip Button (Only for Unlocked Active Skills)
+        if (isUnlocked && data.type === 'active') {
+            if (isEquipped) {
+                actionBtns += `<button class="skill-btn unequip" onclick="window.toggleSkillEquip('${id}')">Quitar</button>`;
+            } else {
+                const full = equippedCount >= MAX_EQUIPPED;
+                actionBtns += `<button class="skill-btn equip" ${full ? 'disabled' : ''} onclick="window.toggleSkillEquip('${id}')">${full ? 'Lleno' : 'Equipar'}</button>`;
+            }
         }
 
         // Stats Display
@@ -70,6 +92,7 @@ export function renderSkillsGrid() {
         }
 
         card.innerHTML = `
+            ${isEquipped ? '<div class="equipped-badge-text">EQUIPADO</div>' : ''}
             <div class="skill-icon-frame">${data.icon}</div>
             <div class="skill-info">
                 <h3>${data.name} <span class="skill-level">Lv.${currentLevel}/${data.maxLevel}</span></h3>
@@ -77,7 +100,7 @@ export function renderSkillsGrid() {
                 ${statsInfo}
             </div>
             <div class="skill-actions">
-                ${btnHtml}
+                ${actionBtns}
             </div>
         `;
         grid.appendChild(card);
@@ -101,4 +124,24 @@ window.upgradeSkill = function(id, cost) {
     } else {
         showNotification('SP insuficientes.', 'error');
     }
+};
+
+window.toggleSkillEquip = function(id) {
+    if (!Game.player.equippedSkills) Game.player.equippedSkills = [];
+    
+    const idx = Game.player.equippedSkills.indexOf(id);
+    if (idx !== -1) {
+        // Unequip
+        Game.player.equippedSkills.splice(idx, 1);
+        showNotification("Habilidad desequipada.", "default");
+    } else {
+        // Equip
+        if (Game.player.equippedSkills.length >= MAX_EQUIPPED) {
+            showNotification(`Máximo ${MAX_EQUIPPED} habilidades activas.`, "error");
+            return;
+        }
+        Game.player.equippedSkills.push(id);
+        showNotification("Habilidad equipada.", "success");
+    }
+    renderSkillsGrid();
 };
