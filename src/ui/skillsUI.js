@@ -1,4 +1,3 @@
-
 import { Game } from '../state/gameState.js';
 import { skillDatabase } from '../data/skills.js';
 import { showNotification } from '../utils/helpers.js';

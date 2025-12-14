@@ -1,4 +1,3 @@
-
 import { Game } from '../state/gameState.js';
 import { baseItems } from '../data/items.js';
 import { genUid, showNotification } from '../utils/helpers.js';
@@ -7,6 +6,7 @@ import { updatePlayerHUD } from '../ui/hud.js';
 export function calculateEffectiveStats() {
     const p = Game.player;
     let eqAtk = 0, eqDef = 0, eqHp = 0, eqMp = 0;
+    let eqCrit = 0, eqEva = 0;
 
     for (const slot in p.equipment) {
         const it = p.equipment[slot];
@@ -15,11 +15,18 @@ export function calculateEffectiveStats() {
             eqDef += it.stats.defense || 0;
             eqHp += it.stats.hp || 0;
             eqMp += it.stats.mp || 0;
+            // Soporte para stats avanzados en items futuros
+            eqCrit += it.stats.crit || 0; 
+            eqEva += it.stats.evasion || 0;
         }
     }
     p.effectiveAttack = p.baseAttack + eqAtk;
     p.effectiveDefense = p.baseDefense + eqDef;
     
+    // Calcular Stats RNG
+    p.effectiveCrit = Math.min(0.50, p.baseCritChance + eqCrit + (p.level * 0.002)); // Cap 50%
+    p.effectiveEvasion = Math.min(0.40, p.baseEvasion + eqEva + (p.level * 0.001)); // Cap 40%
+
     const oldMaxHp = p.maxHp;
     const oldMaxMp = p.maxMp;
     p.maxHp = p.baseMaxHp + eqHp;
@@ -41,7 +48,6 @@ export function trainPlayer() {
 export function gainExp(amount) {
     if (Game.player.hp <= 0) return;
     Game.player.currentExp += amount;
-    // Notification moved to end screen usually, but kept for realtime updates if needed
     while (Game.player.currentExp >= Game.player.neededExp) {
         levelUp();
     }
@@ -108,9 +114,7 @@ export function equipItemByUid(uid) {
     
     // Logic for Dual Wield
     if (slot === 'weapon' && Game.player.unlockedSkills['dual_wield']) {
-        // If main hand is full, and we are trying to equip another weapon, put it in weapon2
         if (Game.player.equipment.weapon) {
-            // Check if shield is equipped (can't have shield + dual wield usually, assuming dual wield replaces shield slot logic)
             if (Game.player.equipment.shield) {
                 unequipItem('shield');
                 showNotification("Escudo desequipado para usar doble espada.", "default");
@@ -118,13 +122,11 @@ export function equipItemByUid(uid) {
             if (!Game.player.equipment.weapon2) {
                 slot = 'weapon2';
             } else {
-                // Both slots full, replace main hand for now (simplest UX without drag/drop)
                 unequipItem('weapon'); 
             }
         }
     }
     
-    // Logic: Shield cannot coexist with Weapon 2
     if (slot === 'shield' && Game.player.equipment.weapon2) {
         unequipItem('weapon2');
         showNotification("Segunda espada desequipada.", "default");
@@ -134,9 +136,8 @@ export function equipItemByUid(uid) {
         unequipItem(slot); 
     }
 
-    // Move from inventory to equipment
     Game.player.equipment[slot] = Game.player.inventory.splice(idx, 1)[0];
-    showNotification(`${base.name} equipado en ${slot === 'weapon2' ? 'Mano Izquierda' : 'Mano Derecha'}.`, "success");
+    showNotification(`${base.name} equipado.`, "success");
     calculateEffectiveStats();
     updatePlayerHUD();
 }
@@ -146,7 +147,6 @@ export function unequipItem(slot) {
     if (!item) return;
     Game.player.equipment[slot] = null;
     Game.player.inventory.push(item);
-    // showNotification("Item desequipado.", "default"); // Reduced spam
     calculateEffectiveStats();
     updatePlayerHUD();
 }
@@ -164,7 +164,6 @@ export function useConsumable(item, index) {
         used = true;
     }
     if (base.effect.cure) {
-        // Logic to remove status
         const idx = Game.player.activeStatusEffects.findIndex(e => e.type === base.effect.cure);
         if(idx !== -1) {
             Game.player.activeStatusEffects.splice(idx, 1);

@@ -1,4 +1,3 @@
-
 import { Game } from '../state/gameState.js';
 import { baseItems } from '../data/items.js';
 import { useConsumable, equipItemByUid, unequipItem } from '../logic/playerLogic.js';
@@ -75,7 +74,7 @@ function createItemCard(base, count, level, stats) {
         <div class="item-icon">${base.icon}</div>
         <div class="item-name" style="color: ${color}">${base.name}</div>
         ${level ? `<div style="font-size:0.7rem; color:#aaa;">LV ${level}</div>` : ''}
-        ${count > 1 ? `<span class="item-count">${count}</span>` : ''}
+        ${count > 1 ? `<div class="item-count">x${count}</div>` : ''}
     `;
     return div;
 }

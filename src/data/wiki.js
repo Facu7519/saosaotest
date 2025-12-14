@@ -1,4 +1,3 @@
-
 export const wikiCharacterData = { 
     kirito: { name: 'Kirito (黒の剣士)', role: 'Espadachín Solitario / Beater', icon: '⚫', description: 'Kazuto Kirigaya, conocido como Kirito, es el protagonista principal. Es un jugador solitario que prefiere luchar en la vanguardia. Posee la habilidad única de "Doble Empuñadura".', fullInfo: 'Más detalles sobre sus batallas, relaciones y crecimiento como personaje...'},
     asuna: { name: 'Asuna (閃光)', role: 'Destello Veloz / Subcomandante KoB', icon: '✨', description: 'Asuna Yuuki, conocida por su velocidad y habilidad con el estoque como "Destello Veloz". Es la subcomandante de los Caballeros de la Sangre (KoB).', fullInfo: 'Su desarrollo desde una jugadora enfocada hasta una compañera leal y poderosa...'},

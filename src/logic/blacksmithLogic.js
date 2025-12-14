@@ -1,4 +1,3 @@
-
 import { Game } from '../state/gameState.js';
 import { blacksmithRecipes, baseItems } from '../data/items.js';
 import { floorData } from '../data/floors.js';
@@ -44,31 +43,51 @@ function forgeItem(recipeKey) {
         return;
     }
     
+    // Verificar materiales (suma total)
     for (const [matId, qty] of Object.entries(recipe.materials)) {
-        const owned = Game.player.inventory.find(i => i.id === matId)?.count || 0;
-        if (owned < qty) {
-            showNotification("Materiales insuficientes.", "error");
+        const totalOwned = Game.player.inventory.reduce((acc, item) => {
+            return item.id === matId ? acc + (item.count || 1) : acc;
+        }, 0);
+        
+        if (totalOwned < qty) {
+            showNotification(`Faltan materiales: ${matId} (${totalOwned}/${qty})`, "error");
             return;
         }
     }
     
     Game.player.col -= recipe.cost;
+    
+    // Consumir materiales
     for (const [matId, qty] of Object.entries(recipe.materials)) {
-        const item = Game.player.inventory.find(i => i.id === matId);
-        item.count -= qty;
-        if (item.count <= 0) {
-            Game.player.inventory = Game.player.inventory.filter(i => i !== item);
+        let remaining = qty;
+        // Iterar al revés para eliminar elementos de manera segura
+        for (let i = Game.player.inventory.length - 1; i >= 0; i--) {
+            const item = Game.player.inventory[i];
+            if (item.id === matId) {
+                const available = item.count || 1;
+                const take = Math.min(available, remaining);
+                
+                item.count = available - take;
+                remaining -= take;
+                
+                if (item.count <= 0) {
+                    Game.player.inventory.splice(i, 1);
+                }
+                
+                if (remaining <= 0) break;
+            }
         }
     }
     
     if (Math.random() < recipe.chance) {
         addItemToInventory({ id: recipe.itemId }, 1);
-        showNotification("¡Éxito!", "success");
+        showNotification(`¡Has forjado ${baseItems[recipe.itemId].name}!`, "success");
     } else {
-        showNotification("Falló la forja...", "error");
+        showNotification("Falló la forja... Materiales perdidos.", "error");
     }
     updatePlayerHUD();
     renderBlacksmithRecipes();
+    renderInventory(); // Actualizar inventario si estaba abierto en segundo plano
 }
 
 export function renderUpgradeEquipmentList() {

@@ -1,4 +1,3 @@
-
 import { Game, ADMIN_CONFIG } from '../state/gameState.js';
 import { sha256Hex, showNotification } from '../utils/helpers.js';
 import { openModal, closeModal } from '../ui/modals.js';

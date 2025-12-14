@@ -1,4 +1,3 @@
-
 // Centralized Game State
 export const Game = {
     player: {
@@ -12,6 +11,12 @@ export const Game = {
         baseMaxMp: 50,
         baseAttack: 5,
         baseDefense: 2,
+        // Nuevas Estadísticas RNG
+        baseCritChance: 0.05, // 5% base
+        baseEvasion: 0.05,    // 5% base
+        effectiveCrit: 0.05,
+        effectiveEvasion: 0.05,
+
         col: 1000,
         currentFloor: 1,
         unlockedFloors: [1], 

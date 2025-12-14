@@ -1,4 +1,3 @@
-
 import { Game } from '../state/gameState.js';
 import { renderInventory, renderEquipment } from './inventory.js';
 import { renderShop } from './shop.js';

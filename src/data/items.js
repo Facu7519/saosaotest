@@ -1,4 +1,3 @@
-
 export const baseItems = {
     // Consumibles
     'healing_potion_s': { name: 'Poción Vida (P)', icon: '🧪', type: 'consumable', effect: { hp: 50 }, description: "Restaura 50 HP."},

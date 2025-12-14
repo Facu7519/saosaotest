@@ -1,4 +1,3 @@
-
 import { Game } from '../state/gameState.js';
 import { floorData } from '../data/floors.js';
 import { baseItems } from '../data/items.js';

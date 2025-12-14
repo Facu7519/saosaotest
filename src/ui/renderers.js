@@ -1,6 +1,6 @@
-
 import { Game } from '../state/gameState.js';
 import { wikiCharacterData, wikiWeaponData, wikiFloorsData, wikiGuildsData } from '../data/wiki.js';
+import { skillDatabase } from '../data/skills.js';
 
 // Wiki Content
 export function renderWikiContent() {
@@ -18,7 +18,6 @@ export function renderWikiContent() {
 function renderCardGrid(container, dataObj, type) {
     container.innerHTML = '';
     
-    // Add intro text for floors/guilds if needed
     if (type === 'floor') {
         const intro = document.createElement('p');
         intro.style.textAlign = 'center';
@@ -84,6 +83,21 @@ export function renderPlayerStats() {
         }
     }
 
+    // Process Skills correctly from Object to Array for display
+    const activeSkillsList = [];
+    const passiveSkillsList = [];
+
+    if (p.unlockedSkills) {
+        Object.entries(p.unlockedSkills).forEach(([id, level]) => {
+            const skillData = skillDatabase[id];
+            if (skillData) {
+                const entry = `<li>${skillData.name} (Lv.${level}) ${skillData.type === 'active' ? `- ${skillData.mpCost} MP` : ''}</li>`;
+                if (skillData.type === 'active') activeSkillsList.push(entry);
+                else passiveSkillsList.push(entry);
+            }
+        });
+    }
+
     container.innerHTML = `
         <div class="stats-category">
             <h3>Atributos Principales</h3>
@@ -92,14 +106,15 @@ export function renderPlayerStats() {
             <div class="stat-line"><span class="stat-label">MP:</span> <span class="stat-value">${p.mp} / ${p.maxMp}</span></div>
             <div class="stat-line"><span class="stat-label">EXP:</span> <span class="stat-value">${p.currentExp} / ${p.neededExp}</span></div>
             <div class="stat-line"><span class="stat-label">Col:</span> <span class="stat-value">${p.col}</span></div>
+            <div class="stat-line"><span class="stat-label">SP (Puntos Habilidad):</span> <span class="stat-value">${p.skillPoints || 0}</span></div>
         </div>
 
         <div class="stats-category">
             <h3>Combate</h3>
             <div class="stat-line"><span class="stat-label">Ataque Base:</span> <span class="stat-value">${p.baseAttack}</span></div>
             <div class="stat-line"><span class="stat-label">Defensa Base:</span> <span class="stat-value">${p.baseDefense}</span></div>
-            <div class="stat-line"><span class="stat-label">Ataque Equip.:</span> <span class="stat-value">${eqAtk}</span></div>
-            <div class="stat-line"><span class="stat-label">Defensa Equip.:</span> <span class="stat-value">${eqDef}</span></div>
+            <div class="stat-line"><span class="stat-label">Ataque Equip.:</span> <span class="stat-value">+${eqAtk}</span></div>
+            <div class="stat-line"><span class="stat-label">Defensa Equip.:</span> <span class="stat-value">+${eqDef}</span></div>
             <div class="stat-line"><span class="stat-label">HP Equip.:</span> <span class="stat-value">+${eqHp}</span></div>
             <hr style="border-color: rgba(70,130,180,0.3); margin: 0.5rem 0;">
             <div class="stat-line"><span class="stat-label"><strong>Ataque Total:</strong></span> <span class="stat-value"><strong>${p.effectiveAttack}</strong></span></div>
@@ -107,20 +122,16 @@ export function renderPlayerStats() {
         </div>
 
         <div class="stats-category">
-            <h3>Habilidades Aprendidas</h3>
-            <ul style="list-style-type: '❖ '; padding-left: 20px;">
-                ${p.skills.length > 0 
-                    ? p.skills.map(s => `<li>${s.name} (${s.mpCost} MP)</li>`).join('') 
-                    : '<li>Ninguna</li>'}
+            <h3>Habilidades Activas</h3>
+            <ul style="list-style-type: '⚔️ '; padding-left: 20px; color: #b0c4de;">
+                ${activeSkillsList.length > 0 ? activeSkillsList.join('') : '<li>Ninguna</li>'}
             </ul>
         </div>
 
         <div class="stats-category">
             <h3>Habilidades Pasivas</h3>
-            <ul style="list-style-type: '🌟 '; padding-left: 20px;">
-                ${p.passiveSkills.length > 0 
-                    ? p.passiveSkills.map(s => `<li>${s.name}</li>`).join('') 
-                    : '<li>Ninguna</li>'}
+            <ul style="list-style-type: '🛡️ '; padding-left: 20px; color: #b0c4de;">
+                ${passiveSkillsList.length > 0 ? passiveSkillsList.join('') : '<li>Ninguna</li>'}
             </ul>
         </div>
     `;

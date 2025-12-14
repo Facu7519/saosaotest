@@ -1,4 +1,3 @@
-
 export const skillDatabase = {
     // --- SWORD SKILLS (Active) ---
     'sonic_leap': {

@@ -1,4 +1,3 @@
-
 # ⚔️ SAO: Aincrad Chronicles (Modular)
 
 Bienvenido a **Sword Art Online: Aincrad Chronicles**, un RPG de texto y gestión basado en navegador, construido con una arquitectura moderna de JavaScript (ES Modules).
@@ -50,7 +49,7 @@ El proyecto está modularizado para facilitar la expansión. La lógica está se
 ├── src/
 │   ├── data/             # BASES DE DATOS (Aquí es donde agregas contenido)
 │   │   ├── items.js      # Armas, armaduras, consumibles y recetas
-│   │   ├── mobs.js       # Datos de Pisos, Monstruos y Jefes (exporta floorData)
+│   │   ├── floors.js     # Datos de Pisos, Monstruos y Jefes
 │   │   ├── skills.js     # Definición de habilidades (activas/pasivas)
 │   │   └── wiki.js       # Texto para la sección de enciclopedia
 │   ├── logic/            # Lógica del juego (Combate, Stats, Crafting)
@@ -59,85 +58,3 @@ El proyecto está modularizado para facilitar la expansión. La lógica está se
 │   └── main.js           # Inicialización y Event Listeners
 └── index.html            # Estructura HTML principal
 ```
-
-### 🛠️ Cómo agregar contenido nuevo
-
-#### 1. Crear un Nuevo Ítem
-Edita `src/data/items.js` y agrega una entrada en `baseItems`.
-
-```javascript
-'nombre_id_unico': {
-    name: 'Nombre del Ítem',
-    icon: '🗡️', // Emoji o HTML SVG
-    type: 'weapon', // weapon, shield, armor, accessory, consumable, material
-    slot: 'weapon', // Slot de equipo
-    stats: { attack: 100, hp: 50 },
-    rarity: 'Epic', // Common, Rare, Epic, Mythic (Define el color del borde)
-    levelReq: 10,
-    description: "Descripción para el tooltip."
-}
-```
-
-#### 2. Crear un Nuevo Monstruo o Piso
-Edita `src/data/mobs.js`. Aunque el archivo se llama `mobs.js`, exporta el objeto `floorData` que contiene la estructura del mundo.
-
-```javascript
-10: { // ID del Piso
-    name: "Piso 10: Campos de Mil Flores",
-    monsters: [
-        {
-            id: 'monster_id',
-            name: "Samurái Fantasma",
-            hp: 800,
-            attack: 65,
-            defense: 20,
-            exp: 300,
-            col: 100,
-            icon: '👹',
-            drops: { 'raw_hide': 0.5, 'rare_sword_id': 0.05 } // ID del ítem : Probabilidad (0-1)
-        }
-    ],
-    boss: { ... }, // Misma estructura que un monstruo, type 'boss' se agrega auto
-    shopItems: [ { id: 'healing_potion_l', price: 200 } ],
-    blacksmithRecipes: ['rare_sword_id'], // IDs de recetas disponibles en este piso
-    unlocked: false
-}
-```
-
-#### 3. Agregar una Receta de Herrería
-Edita `src/data/items.js` en la sección `blacksmithRecipes`.
-
-```javascript
-'item_result_id': {
-    itemId: 'item_result_id', // Debe existir en baseItems
-    materials: { 'iron_ore': 10, 'dragon_scale': 1 }, // IDs de materiales
-    cost: 5000,
-    levelReq: 15,
-    chance: 0.8 // 80% probabilidad de éxito
-}
-```
-
-#### 4. Crear una Habilidad (Skill)
-Edita `src/data/skills.js`.
-
-```javascript
-'skill_id': {
-    name: 'Golpe Meteoro',
-    type: 'active', // 'active' o 'passive'
-    category: 'sword_skills', // sword_skills, unique_skills, passive_skills
-    mpCost: 50,
-    hits: 1, // Golpes visuales y para combo
-    animClass: 'anim-starburst', // Clase CSS para la animación (ver style-game.css)
-    baseDamagePct: 2.5, // 250% del ataque base
-    growthPct: 0.1, // +10% daño por nivel de habilidad
-    maxLevel: 10
-}
-```
-
-### 🎨 Estilos y Animaciones
-Las animaciones de combate se definen en `css/style-game.css`.
-Si agregas una nueva `animClass` a una habilidad, asegúrate de definir los `@keyframes` correspondientes en el CSS.
-
-### ⚠️ Notas Técnicas
-*   **Estado**: `Game.player` en `src/state/gameState.js` contiene todo el progreso. Se guarda en `localStorage`.
-*   **Admin**: Existe un panel de administrador oculto. Busca la lógica en `src/logic/adminLogic.js` para ver cómo acceder o modificar la clave.

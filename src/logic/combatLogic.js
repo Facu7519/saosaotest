@@ -1,4 +1,3 @@
-
 import { Game } from '../state/gameState.js';
 import { floorData } from '../data/floors.js';
 import { skillDatabase, statusEffects } from '../data/skills.js';
@@ -86,7 +85,7 @@ export function showCombatOptions(type) {
     potionContainer.style.display = 'none';
 
     if (type === 'skills') {
-        if (isSkillsVisible) return; // Toggle Off
+        if (isSkillsVisible) return; 
 
         skillContainer.innerHTML = '';
         const skills = Object.entries(Game.player.unlockedSkills)
@@ -99,7 +98,7 @@ export function showCombatOptions(type) {
             skills.forEach(skill => {
                 const currentMpCost = skill.mpCost + (skill.mpGrowth * (skill.level - 1));
                 const btn = document.createElement('button');
-                btn.className = 'combat-sub-btn'; // Updated Class
+                btn.className = 'combat-sub-btn'; 
                 btn.innerHTML = `<span class="icon">${skill.icon}</span> ${skill.name} <span class="cost">${currentMpCost} MP</span>`;
                 
                 const canUse = Game.player.mp >= currentMpCost;
@@ -111,7 +110,7 @@ export function showCombatOptions(type) {
         }
         skillContainer.style.display = 'flex';
     } else if (type === 'potions') {
-        if (isPotionsVisible) return; // Toggle Off
+        if (isPotionsVisible) return;
 
         potionContainer.innerHTML = '';
         const potions = Game.player.inventory.filter(i => (i.type === 'consumable' && (i.effect.hp || i.effect.mp)));
@@ -131,11 +130,33 @@ export function showCombatOptions(type) {
     }
 }
 
+// --- LOGIC HELPER: Calculate Hit (Dodge/Crit) ---
+function calculateHit(sourceAtk, targetDef, critChance = 0.05, dodgeChance = 0.05) {
+    // 1. Check Dodge
+    if (Math.random() < dodgeChance) {
+        return { damage: 0, isCrit: false, isMiss: true };
+    }
+
+    // 2. Base Damage
+    const raw = Math.max(1, sourceAtk - targetDef);
+    let damage = Math.floor(raw * (0.9 + Math.random() * 0.2)); // Variance +/- 10%
+
+    // 3. Check Crit
+    let isCrit = false;
+    if (Math.random() < critChance) {
+        isCrit = true;
+        damage = Math.floor(damage * 1.5); // 1.5x Crit Multiplier
+    }
+
+    return { damage, isCrit, isMiss: false };
+}
+
 function performSkill(skill) {
     const currentMpCost = skill.mpCost + (skill.mpGrowth * (skill.level - 1));
     if (Game.player.mp < currentMpCost) return;
     Game.player.mp -= currentMpCost;
     
+    // Skill factors
     const levelFactor = (skill.growthPct * (skill.level - 1));
     const totalMultiplier = skill.baseDamagePct + levelFactor;
     
@@ -146,45 +167,30 @@ function performSkill(skill) {
         passiveAtkBonus += (data.baseEffect + (data.growthEffect * (lvl - 1)));
     }
 
-    const rawDmg = Math.max(1, (Game.player.effectiveAttack * passiveAtkBonus * totalMultiplier) - Game.currentCombat.enemy.defense);
-    const damage = Math.floor(rawDmg);
+    // Calculate raw attack power for skill
+    const skillAtkPower = Game.player.effectiveAttack * passiveAtkBonus * totalMultiplier;
     
-    // Hide menus
+    // Use calculateHit but with skill power
+    // Skills usually have higher accuracy, so we halve enemy dodge chance for fairness
+    const hitResult = calculateHit(skillAtkPower, Game.currentCombat.enemy.defense, Game.player.effectiveCrit + 0.1, 0.02);
+    
     document.getElementById('combat-skills-list-container').style.display = 'none';
 
     triggerSkillAnimation(skill.animClass, skill.hits);
 
     setTimeout(() => {
-        addCombatLog(`✨ ${skill.name}! (${skill.hits} golpes)`, 'player-action');
-        dealDamage(damage, Game.currentCombat.enemy, 'player', skill.hits);
+        let msg = `✨ ${skill.name}`;
+        if (hitResult.isCrit) msg += " (CRIT!)";
+        addCombatLog(msg, 'player-action');
+        
+        dealDamageResult(hitResult, Game.currentCombat.enemy, 'player', skill.hits);
         if (Game.currentCombat.enemy.currentHp > 0) endTurn();
     }, 600);
-}
-
-function triggerSkillAnimation(animClass, hits = 1) {
-    const layer = document.getElementById('combat-animation-layer');
-    const enemyEl = document.getElementById('combat-enemy-display');
-    if (!layer || !enemyEl) return;
-    
-    const rect = enemyEl.getBoundingClientRect();
-    const animEl = document.createElement('div');
-    animEl.className = `skill-anim ${animClass}`;
-    animEl.style.left = `${rect.left + rect.width/2}px`;
-    animEl.style.top = `${rect.top + rect.height/2}px`;
-    
-    layer.appendChild(animEl);
-    enemyEl.classList.add('shake-violent');
-    
-    setTimeout(() => {
-        if(animEl.parentNode) layer.removeChild(animEl);
-        enemyEl.classList.remove('shake-violent');
-    }, 1000);
 }
 
 function performPotion(item) {
     const idx = Game.player.inventory.findIndex(i => i.id === item.id);
     if (idx !== -1) {
-        // Visual feedback on player
         const playerEl = document.getElementById('combat-player-display');
         playerEl.classList.add('heal-flash');
         
@@ -206,14 +212,18 @@ export function combatAction(actionType) {
     if(!Game.currentCombat.active || !Game.currentCombat.playerTurn) return;
     
     if (actionType === 'attack') {
-        const rawDmg = Math.max(1, Game.player.effectiveAttack - (Game.currentCombat.enemy.defense || 0));
-        const damage = Math.floor(rawDmg * (0.9 + Math.random() * 0.2));
+        const hitResult = calculateHit(
+            Game.player.effectiveAttack, 
+            Game.currentCombat.enemy.defense || 0,
+            Game.player.effectiveCrit,
+            0.05 // Base enemy evasion assumption
+        );
         
         triggerSkillAnimation('anim-slash-normal', 1);
         
         setTimeout(() => {
             addCombatLog(`🗡️ Atacas a ${Game.currentCombat.enemy.name}.`, 'player-action');
-            dealDamage(damage, Game.currentCombat.enemy, 'player');
+            dealDamageResult(hitResult, Game.currentCombat.enemy, 'player');
             if (Game.currentCombat.enemy.currentHp > 0) endTurn();
         }, 300);
     } else if (actionType === 'flee') {
@@ -221,30 +231,43 @@ export function combatAction(actionType) {
     }
 }
 
-function dealDamage(amount, target, source, hits = 1) {
+// Replaces simplified dealDamage
+function dealDamageResult(hitResult, target, source, hits = 1) {
     const isPlayerTarget = (source === 'enemy');
+    const displayEl = isPlayerTarget ? document.getElementById('combat-player-display') : document.getElementById('combat-enemy-display');
+
+    if (hitResult.isMiss) {
+        showFloatingText("MISS", displayEl, { type: 'miss' });
+        addCombatLog(isPlayerTarget ? "¡Esquivaste el ataque!" : "¡El enemigo esquivó!", "system-message");
+        return;
+    }
+
+    const amount = hitResult.damage;
     
     if (isPlayerTarget) {
         Game.player.hp = Math.max(0, Game.player.hp - amount);
         Game.player.attackComboCount = 0;
-        document.getElementById('combat-player-display').classList.add('damage-flash');
-        setTimeout(()=>document.getElementById('combat-player-display').classList.remove('damage-flash'), 200);
+        displayEl.classList.add('damage-flash');
+        setTimeout(()=>displayEl.classList.remove('damage-flash'), 200);
     } else {
         target.currentHp = Math.max(0, target.currentHp - amount);
         Game.player.attackComboCount += hits;
-        document.getElementById('combat-enemy-display').classList.add('damage-flash');
-        setTimeout(()=>document.getElementById('combat-enemy-display').classList.remove('damage-flash'), 200);
+        displayEl.classList.add('damage-flash');
+        setTimeout(()=>displayEl.classList.remove('damage-flash'), 200);
     }
     
     updateComboDisplay();
     updateCombatUI();
 
-    const displayEl = isPlayerTarget ? document.getElementById('combat-player-display') : document.getElementById('combat-enemy-display');
-    showFloatingText(`-${amount}`, displayEl, { 
-        type: 'damage', 
-        shaky: amount > 50,
-        large: amount > 100
-    });
+    // Floating Text Logic
+    if (hitResult.isCrit) {
+        showFloatingText(`CRIT! -${amount}`, displayEl, { type: 'crit', large: true, shaky: true });
+        // Optional: Screen Shake on Player Crit
+        if (!isPlayerTarget) document.body.classList.add('screen-shake');
+        setTimeout(()=> document.body.classList.remove('screen-shake'), 450);
+    } else {
+        showFloatingText(`-${amount}`, displayEl, { type: 'damage', shaky: amount > 50 });
+    }
 
     if (isPlayerTarget && Game.player.hp <= 0) endCombat(false);
     else if (!isPlayerTarget && target.currentHp <= 0) endCombat(true);
@@ -289,10 +312,20 @@ function endTurn() {
 function enemyTurn() {
     if(!Game.currentCombat.active) return;
     const enemy = Game.currentCombat.enemy;
-    const damage = Math.floor(Math.max(1, enemy.attack - Game.player.effectiveDefense));
+
+    // Enemy AI Logic: Calculate Hit against Player
+    // Bosses have slightly better stats usually
+    const enemyCrit = Game.currentCombat.isBoss ? 0.10 : 0.05;
+    
+    const hitResult = calculateHit(
+        enemy.attack, 
+        Game.player.effectiveDefense, 
+        enemyCrit, 
+        Game.player.effectiveEvasion
+    );
     
     addCombatLog(`${enemy.name} ataca!`, 'enemy-action');
-    dealDamage(damage, Game.player, 'enemy');
+    dealDamageResult(hitResult, Game.player, 'enemy');
     
     if(Game.player.hp > 0) {
         Game.currentCombat.playerTurn = true;
@@ -335,6 +368,26 @@ function addCombatLog(msg, type) {
     log.scrollTop = log.scrollHeight;
 }
 
+function triggerSkillAnimation(animClass, hits = 1) {
+    const layer = document.getElementById('combat-animation-layer');
+    const enemyEl = document.getElementById('combat-enemy-display');
+    if (!layer || !enemyEl) return;
+    
+    const rect = enemyEl.getBoundingClientRect();
+    const animEl = document.createElement('div');
+    animEl.className = `skill-anim ${animClass}`;
+    animEl.style.left = `${rect.left + rect.width/2}px`;
+    animEl.style.top = `${rect.top + rect.height/2}px`;
+    
+    layer.appendChild(animEl);
+    enemyEl.classList.add('shake-violent');
+    
+    setTimeout(() => {
+        if(animEl.parentNode) layer.removeChild(animEl);
+        enemyEl.classList.remove('shake-violent');
+    }, 1000);
+}
+
 function endCombat(win, fled){
      Game.currentCombat.active = false;
      const modalContent = document.querySelector('#combatModal .modal-content');
@@ -349,7 +402,6 @@ function endCombat(win, fled){
          const enemy = Game.currentCombat.enemy;
          modalContent.classList.add('combat-victory');
          
-         // Process Drops
          const earnedDrops = [];
          if (enemy.drops) {
              Object.entries(enemy.drops).forEach(([itemId, chance]) => {
@@ -384,14 +436,12 @@ function renderEndScreen(win, enemy) {
     activeView.style.display = 'none';
     resultView.style.display = 'block';
     
-    // Clear previous results
     resultView.innerHTML = '';
 
     const drops = Game.currentCombat.drops || [];
     let dropHtml = '';
     if (drops.length > 0) {
         dropHtml = drops.map(id => {
-            // Simple mapping or importing items would be circular, simple text for now or passed from main
             return `<div class="loot-item">📦 ${id}</div>`;
         }).join('');
     } else {

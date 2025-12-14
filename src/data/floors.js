@@ -1,4 +1,3 @@
-
 export const floorData = {
     1: {
         name: "Bosque del Inicio",

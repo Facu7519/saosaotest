@@ -1,4 +1,3 @@
-
 import { Game } from './state/gameState.js';
 import { updatePlayerHUD } from './ui/hud.js';
 import { openModal, setupModalListeners, closeModal } from './ui/modals.js';
