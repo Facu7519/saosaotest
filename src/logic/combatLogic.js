@@ -105,14 +105,10 @@ export function showCombatOptions(type) {
     const skillContainer = document.getElementById('combat-skills-list-container');
     const potionContainer = document.getElementById('combat-potions-list-container');
     
-    const isSkillsVisible = skillContainer.style.display === 'flex';
-    const isPotionsVisible = potionContainer.style.display === 'flex';
-
     skillContainer.style.display = 'none';
     potionContainer.style.display = 'none';
 
     if (type === 'skills') {
-        if (isSkillsVisible) return; 
         skillContainer.innerHTML = '';
         const equippedIds = Game.player.equippedSkills || [];
         const skills = Object.entries(Game.player.unlockedSkills)
@@ -141,7 +137,6 @@ export function showCombatOptions(type) {
         }
         skillContainer.style.display = 'flex';
     } else if (type === 'potions') {
-        if (isPotionsVisible) return;
         potionContainer.innerHTML = '';
         const potions = Game.player.inventory.filter(i => (i.type === 'consumable' && (i.effect.hp || i.effect.mp)));
         if (potions.length === 0) {
@@ -198,7 +193,6 @@ function performSkill(skill, cost) {
     
     document.getElementById('combat-skills-list-container').style.display = 'none';
 
-    // Trigger dynamic multi-hit animation
     triggerSkillAnimation(skill.animClass, skill.hits);
 
     setTimeout(() => {
@@ -262,15 +256,14 @@ function dealDamageResult(hitResult, target, source, hits = 1) {
     if (isPlayerTarget) {
         Game.player.hp = Math.max(0, Game.player.hp - amount);
         Game.player.attackComboCount = 0;
-        displayEl.classList.add('damage-flash');
-        setTimeout(()=>displayEl.classList.remove('damage-flash'), 200);
     } else {
         target.currentHp = Math.max(0, target.currentHp - amount);
         Game.player.attackComboCount += hits;
-        displayEl.classList.add('damage-flash');
-        setTimeout(()=>displayEl.classList.remove('damage-flash'), 200);
     }
     
+    displayEl.classList.add('damage-flash');
+    setTimeout(()=>displayEl.classList.remove('damage-flash'), 200);
+
     updateComboDisplay();
     updateCombatUI();
 
@@ -293,8 +286,8 @@ function updateComboDisplay() {
         el.textContent = `${count} HITS!`;
         el.classList.remove('hidden');
         el.style.animation = 'none';
-        el.offsetHeight; 
-        el.style.animation = 'comboPulse 0.3s ease-out';
+        void el.offsetWidth; // trigger reflow
+        el.style.animation = 'comboPulse 0.3s ease-out forwards';
     } else {
         el.classList.add('hidden');
     }
@@ -309,11 +302,6 @@ function processStatusEffects(entity, isPlayer) {
             if (Game.player.hp < Game.player.maxHp) {
                  Game.player.hp = Math.min(Game.player.maxHp, Game.player.hp + heal);
                  showFloatingText(`+${Math.floor(heal)}`, document.getElementById('combat-player-display'), { type: 'heal' });
-            }
-        }
-        if (Game.player.mpRegen && Game.player.mpRegen > 0) {
-            if (Game.player.mp < Game.player.maxMp) {
-                Game.player.mp = Math.min(Game.player.maxMp, Game.player.mp + Game.player.mpRegen);
             }
         }
     }
@@ -398,16 +386,6 @@ function executeBossAI(boss) {
 
 function performEnemySkill(boss, skill, extraMultiplier = 1.0) {
     addCombatLog(`${boss.name} usa 【${skill.name}】!`, 'enemy-action');
-    if (skill.statusEffect) {
-        const resistChance = Game.player.statusResist || 0;
-        const difficulty = boss.isEnraged ? 0.2 : 0;
-        if (Math.random() > (resistChance - difficulty)) {
-            addCombatLog(`💥 ¡Sufres ${skill.statusEffect.type}!`, 'enemy-action');
-        } else {
-            addCombatLog(`🛡️ ¡Resististe ${skill.statusEffect.type}!`, 'system-message');
-            showFloatingText("RESIST", document.getElementById('combat-player-display'), { color: '#fff' });
-        }
-    }
     const multiplier = (skill.damageMultiplier || 1.5) * extraMultiplier;
     const dmg = Math.floor(boss.attack * multiplier);
     triggerSkillAnimation('anim-slash-sonic', 1);
@@ -449,9 +427,9 @@ function addCombatLog(msg, type) {
 export function triggerSkillAnimation(animClass, hits = 1, isIntro = false) {
     const layer = document.getElementById('combat-animation-layer');
     const enemyEl = document.getElementById('combat-enemy-display');
-    const modalContent = document.querySelector('#combatModal .modal-content');
     if (!layer || !enemyEl) return;
     
+    // Calculate position based on the combatant element
     const rect = enemyEl.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
@@ -464,8 +442,8 @@ export function triggerSkillAnimation(animClass, hits = 1, isIntro = false) {
             const animEl = document.createElement('div');
             animEl.className = `skill-anim ${animClass}`;
             
-            const offsetX = (Math.random() - 0.5) * (rect.width * 0.6);
-            const offsetY = (Math.random() - 0.5) * (rect.height * 0.6);
+            const offsetX = (Math.random() - 0.5) * (rect.width * 0.4);
+            const offsetY = (Math.random() - 0.5) * (rect.height * 0.4);
             const rotation = Math.random() * 360;
 
             animEl.style.left = `${centerX + offsetX}px`;
@@ -474,16 +452,6 @@ export function triggerSkillAnimation(animClass, hits = 1, isIntro = false) {
             
             layer.appendChild(animEl);
             
-            enemyEl.classList.remove('shake-violent');
-            void enemyEl.offsetWidth; 
-            enemyEl.classList.add('shake-violent');
-
-            if (hits > 5 || isIntro) {
-                modalContent.classList.remove('shake-modal');
-                void modalContent.offsetWidth;
-                modalContent.classList.add('shake-modal');
-            }
-
             setTimeout(() => {
                 if(animEl.parentNode) layer.removeChild(animEl);
             }, 1000);
@@ -508,20 +476,15 @@ function endCombat(win, fled){
          const enemy = Game.currentCombat.enemy;
          const isBoss = Game.currentCombat.isBoss;
          
-         if (Game.player.hpOnKill) Game.player.hp = Math.min(Game.player.maxHp, Game.player.hp + Game.player.hpOnKill);
-         if (Game.player.mpOnKill) Game.player.mp = Math.min(Game.player.maxMp, Game.player.mp + Game.player.mpOnKill);
-         
          const earnedDrops = [];
          let gotRare = false;
 
-         // Capture Pity state before update for UI
          Game.currentCombat.pityUsed = Game.player.bossPity || 0;
 
-         // Standard Drops with Pity System
          if (enemy.drops) {
              Object.entries(enemy.drops).forEach(([itemId, chance]) => {
                  const baseItem = baseItems[itemId];
-                 const isRareDrop = baseItem && (baseItem.rarity === 'Mythic' || baseItem.rarity === 'Epic' || baseItem.rarity === 'Rare');
+                 const isRareDrop = baseItem && ['Mythic', 'Epic', 'Rare'].includes(baseItem.rarity);
                  
                  let finalChance = chance;
                  if (isBoss && isRareDrop) {
@@ -536,25 +499,10 @@ function endCombat(win, fled){
              });
          }
 
-         // Update Pity Counter
          if (isBoss) {
-             if (gotRare) {
-                 Game.player.bossPity = 0; // Reset
-             } else {
-                 Game.player.bossPity = (Game.player.bossPity || 0) + 0.05; // +5%
-             }
+             if (gotRare) Game.player.bossPity = 0;
+             else Game.player.bossPity = (Game.player.bossPity || 0) + 0.05;
              Game.currentCombat.pityNew = Game.player.bossPity;
-         }
-
-         // Special Unique Boss Drop
-         if (isBoss && enemy.specialDrop) {
-             const uniqueId = `${enemy.id}_unique`;
-             if (!Game.player.obtainedUniqueDrops.includes(uniqueId)) {
-                addItemToInventory({ id: enemy.specialDrop }, 1);
-                earnedDrops.push(enemy.specialDrop);
-                Game.player.obtainedUniqueDrops.push(uniqueId);
-                showNotification(`🌟 ¡DROP ÚNICO: ${baseItems[enemy.specialDrop].name}!`, 'success', 8000);
-             }
          }
 
          Game.currentCombat.drops = earnedDrops;
@@ -567,7 +515,6 @@ function endCombat(win, fled){
                  if (!Game.player.unlockedFloors.includes(nextFloor)) {
                      Game.player.unlockedFloors.push(nextFloor);
                      floorData[nextFloor].unlocked = true;
-                     showNotification(`¡Piso ${nextFloor} Desbloqueado!`, 'success', 8000);
                  }
              }
          }
@@ -596,7 +543,6 @@ function renderEndScreen(win, enemy) {
     const drops = Game.currentCombat.drops || [];
     const isBoss = Game.currentCombat.isBoss;
     
-    // Grid of loot cards with rarity logic
     let dropHtml = drops.length > 0 ? drops.map((id, index) => {
         const base = baseItems[id];
         if (!base) return `<div class="loot-item">📦 ${id}</div>`;
@@ -613,12 +559,11 @@ function renderEndScreen(win, enemy) {
         </div>`;
     }).join('') : '<div class="loot-empty">Sin objetos obtenidos</div>';
 
-    // Refined Pity System UI
     let pityHtml = '';
     if (isBoss) {
         const pityUsed = Math.floor((Game.currentCombat.pityUsed || 0) * 100);
         const pityNew = Math.floor((Game.currentCombat.pityNew || 0) * 100);
-        const rareFound = pityNew === 0 && pityUsed >= 0;
+        const rareFound = pityNew === 0;
 
         pityHtml = `
             <div class="pity-system-panel">
@@ -629,11 +574,10 @@ function renderEndScreen(win, enemy) {
                     </span>
                 </div>
                 <div class="pity-gauge">
-                    <div class="pity-gauge-fill" style="width: ${Math.min(100, pityNew * 2)}%"></div>
-                    <div class="pity-gauge-markers"><span></span><span></span><span></span><span></span></div>
+                    <div class="pity-gauge-fill" style="width: ${Math.min(100, pityNew * 4)}%"></div>
                 </div>
                 <p class="pity-hint">
-                    ${rareFound ? '¡Has obtenido botín raro! Tu suerte se ha reiniciado.' : `Bonus de suerte actual: <strong>+${pityUsed}%</strong>. Próximo encuentro: <strong>+${pityNew}%</strong>.`}
+                    ${rareFound ? '¡Has obtenido botín raro! Tu suerte se ha reiniciado.' : `Bonus usado: <strong>+${pityUsed}%</strong>. Bonus acumulado para la próxima: <strong>+${pityNew}%</strong>.`}
                 </p>
             </div>
         `;
@@ -649,12 +593,12 @@ function renderEndScreen(win, enemy) {
                 <div class="result-row"><span class="label">Col</span><span class="value col">+${enemy.col} Col</span></div>
                 ${pityHtml}
                 <div class="result-drops">
-                    <h3 class="drops-title">Botín del Calabozo</h3>
+                    <h3 class="drops-title">Botín Obtenido</h3>
                     <div class="drops-grid">${dropHtml}</div>
                 </div>
                 ` : `<div class="result-row"><span class="value" style="color:#bbb">Has sido transportado a la Ciudad de Inicio.</span></div>`}
             </div>
-            <button class="action-btn large-btn confirm-btn" onclick="document.getElementById('combatModal').style.display='none'">Cerrar Registro</button>
+            <button class="action-btn large-btn confirm-btn" onclick="document.getElementById('combatModal').style.display='none'">Continuar</button>
         </div>
     `;
 }
@@ -662,4 +606,13 @@ function renderEndScreen(win, enemy) {
 function translateRarity(rarity) {
     const map = { 'Common': 'Común', 'Rare': 'Raro', 'Epic': 'Épico', 'Mythic': 'Mítico' };
     return map[rarity] || rarity;
+}
+
+function addCombatLog(msg, type) {
+    const log = document.getElementById('combat-log-display');
+    const p = document.createElement('p');
+    p.textContent = msg;
+    p.className = type;
+    log.appendChild(p);
+    log.scrollTop = log.scrollHeight;
 }
