@@ -55,10 +55,6 @@ export const Game = {
         lastCombatAction: null, 
         attackComboCount: 0, 
         isAdmin: false,
-
-        // Drop Luck & Pity System
-        bossPity: 0, // Increases 0.05 per boss kill without mythic/epic drop
-        obtainedUniqueDrops: [] // Stores IDs of special one-time items
     },
     currentCombat: {
         active: false, 
@@ -66,8 +62,7 @@ export const Game = {
         isBoss: false, 
         playerTurn: true,
         turnCount: 0, 
-        drops: [], // Store drops for victory screen
-        bonusLuck: 0 // Captured luck at start of fight
+        drops: [] // Store drops for victory screen
     },
     settings: {
         musicVolume: 0.3,

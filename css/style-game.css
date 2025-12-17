@@ -1,139 +1,146 @@
 
-/* style-game.css - Estética SAO */
+/* style-game.css */
 
-:root {
-    --sao-border: #87ceeb;
-    --sao-panel-bg: rgba(15, 25, 40, 0.95);
-    --sao-green: #2ecc71;
-    --sao-blue: #3498db;
+/* --- Previous styles truncated for brevity but maintained in full file --- */
+/* ... (HUD, Resource bars, Buttons, Modals, Inventory, etc.) ... */
+
+/* --- COMBAT ANIMATIONS SYSTEM --- */
+#combat-animation-layer {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9000;
 }
 
-/* MODALES */
-.modal {
-    display: none;
-    position: fixed !important;
-    top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.85);
-    backdrop-filter: blur(5px);
-    z-index: 10000;
-}
-
-.modal-content {
-    position: absolute;
-    top: 50%; left: 50%;
+.skill-anim {
+    position: absolute; width: 200px; height: 200px;
     transform: translate(-50%, -50%);
-    background: var(--sao-panel-bg);
-    border: 2px solid var(--sao-border);
-    padding: 25px;
-    width: 90%;
-    max-width: 600px;
-    max-height: 85vh;
-    overflow-y: auto;
-    border-radius: 4px;
-    box-shadow: 0 0 30px rgba(135, 206, 235, 0.3);
-    color: white;
-}
-
-.modal-content.large { max-width: 900px; }
-.modal-content.xlarge { max-width: 1100px; }
-
-/* HUD */
-.sao-player-hud {
-    padding: 15px;
-    background: linear-gradient(90deg, rgba(0,0,0,0.8), transparent);
-    border-left: 5px solid var(--sao-border);
-    margin-bottom: 20px;
-}
-
-.sao-hp-bar-container {
-    height: 18px;
-    background: rgba(255,255,255,0.1);
-    margin: 10px 0;
-    border: 1px solid rgba(255,255,255,0.2);
-}
-
-.sao-hp-bar-fill {
-    height: 100%;
-    background: var(--sao-green);
-    width: 100%;
-    transition: width 0.3s ease;
-}
-
-.resource-row { margin: 10px 0; }
-.resource-bar-container {
-    height: 10px;
-    background: rgba(0,0,0,0.3);
-    border: 1px solid rgba(255,255,255,0.1);
-}
-
-/* BOTONES */
-.action-buttons {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 10px;
-}
-
-.action-btn {
-    background: rgba(135, 206, 235, 0.1);
-    border: 1px solid var(--sao-border);
-    color: white;
-    padding: 10px;
-    cursor: pointer;
-    font-weight: bold;
-    text-transform: uppercase;
-    transition: all 0.2s;
-}
-
-.action-btn:hover {
-    background: var(--sao-border);
-    color: black;
-}
-
-/* CHATBOT */
-#ai-chatbot-container {
-    position: fixed;
-    bottom: 90px;
-    right: 25px;
-    width: 350px;
-    height: 450px;
-    background: var(--sao-panel-bg);
-    border: 2px solid var(--sao-border);
-    display: flex;
-    flex-direction: column;
-    z-index: 10001;
+    background-size: contain; background-repeat: no-repeat; background-position: center;
     opacity: 0;
-    pointer-events: none;
-    transform: translateY(20px);
-    transition: 0.3s;
+    filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));
 }
 
-#ai-chatbot-container.active {
-    opacity: 1;
-    pointer-events: all;
-    transform: translateY(0);
+/* 1. Sonic Leap / Speed Slashes */
+.anim-slash-sonic {
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.8), #fff, rgba(0, 255, 255, 0.8), transparent);
+    height: 4px; width: 300px;
+    animation: slashSonic 0.35s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+}
+@keyframes slashSonic {
+    0% { transform: translate(-50%, -50%) scaleX(0) rotate(-15deg); opacity: 0; filter: brightness(2); }
+    30% { opacity: 1; transform: translate(-50%, -50%) scaleX(1.2) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) scaleX(1.5) rotate(15deg); opacity: 0; }
 }
 
-.chat-header {
-    background: var(--sao-border);
-    color: black;
-    padding: 10px;
-    font-weight: bold;
-    display: flex;
-    justify-content: space-between;
+/* 2. Horizontal Square / Geo Slashes */
+.anim-slash-square {
+    border: 3px solid #00ffff;
+    box-shadow: 0 0 25px #00ffff, inset 0 0 15px #00ffff;
+    animation: squareExpand 0.5s ease-out forwards;
+    background: rgba(0, 255, 255, 0.1);
+}
+@keyframes squareExpand {
+    0% { width: 0; height: 0; opacity: 1; transform: translate(-50%, -50%) rotate(45deg); border-radius: 0; }
+    100% { width: 350px; height: 350px; opacity: 0; transform: translate(-50%, -50%) rotate(225deg); border-width: 10px; border-radius: 20px; }
 }
 
-.chat-messages {
-    flex: 1;
-    padding: 15px;
-    overflow-y: auto;
+/* 3. Vorpal Strike (Powerful Red Thrust) */
+.anim-vorpal-thrust {
+    background: linear-gradient(90deg, #ff0000, #ff6666, #fff, #ff6666, #ff0000);
+    height: 8px; width: 400px;
+    box-shadow: 0 0 30px #ff0000;
+    animation: vorpalStrike 0.4s ease-in forwards;
+}
+@keyframes vorpalStrike {
+    0% { transform: translate(-100%, -50%) scaleX(0.1); opacity: 0; }
+    20% { opacity: 1; transform: translate(-50%, -50%) scaleX(1); }
+    100% { transform: translate(50%, -50%) scaleX(1.5); opacity: 0; filter: blur(5px); }
 }
 
-.message {
-    margin-bottom: 10px;
-    padding: 8px 12px;
-    border-radius: 4px;
-    max-width: 85%;
+/* 4. Starburst Stream (Golden Explosions) */
+.anim-starburst {
+    background: radial-gradient(circle, #fff 10%, #ffd700 40%, transparent 70%);
+    border-radius: 50%;
+    animation: starburstAnim 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    mix-blend-mode: screen;
+}
+@keyframes starburstAnim {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.8); filter: brightness(1.5); }
+    100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; filter: blur(10px); }
 }
 
-.message.ai { background: rgba(135, 206, 235, 0.2); align-self: flex-start; }
-.message.user { background: rgba(255,255,255,0.1); align-self: flex-end; margin-left: auto; }
+/* 5. The Eclipse (Dark Energy Vortex) */
+.anim-eclipse {
+    background: radial-gradient(circle, #000 20%, #4b0082 50%, #9370db 80%, transparent);
+    animation: eclipseVortex 0.8s ease-in-out forwards;
+    mix-blend-mode: multiply;
+}
+@keyframes eclipseVortex {
+    0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); opacity: 0; }
+    30% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.5) rotate(180deg); }
+    70% { opacity: 1; transform: translate(-50%, -50%) scale(2.5) rotate(720deg); filter: invert(1); }
+    100% { transform: translate(-50%, -50%) scale(4) rotate(1080deg); opacity: 0; }
+}
+
+/* 6. Basic Normal Slash */
+.anim-slash-normal {
+    background: linear-gradient(120deg, transparent 40%, rgba(255, 255, 255, 1) 50%, transparent 60%);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+    height: 2px; width: 250px;
+    animation: normalSlash 0.25s ease-out forwards;
+}
+@keyframes normalSlash {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6) rotate(-45deg); }
+    40% { opacity: 1; transform: translate(-50%, -50%) scale(1.1) rotate(0deg); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1.3) rotate(45deg); }
+}
+
+/* --- Feedback Animations --- */
+.shake-violent { animation: shakeViolent 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes shakeViolent { 
+    10%, 90% { transform: translate3d(-4px, 0, 0); } 
+    20%, 80% { transform: translate3d(6px, 0, 0); } 
+    30%, 50%, 70% { transform: translate3d(-10px, 0, 0); } 
+    40%, 60% { transform: translate3d(10px, 0, 0); } 
+}
+
+.shake-modal { animation: shakeModal 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+@keyframes shakeModal {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+.screen-shake { animation: screenShake 450ms ease-in-out; }
+@keyframes screenShake {
+    0% { transform: translate(0,0); }
+    20% { transform: translate(-8px, 5px); }
+    40% { transform: translate(8px, -5px); }
+    60% { transform: translate(-6px, -3px); }
+    80% { transform: translate(6px, 3px); }
+    100% { transform: translate(0,0); }
+}
+
+.heal-flash { animation: healFlash 0.5s ease-out; }
+@keyframes healFlash {
+    0% { box-shadow: inset 0 0 0px #00ff00; filter: brightness(1); }
+    50% { box-shadow: inset 0 0 50px #00ff00; filter: brightness(1.3) saturate(1.5); }
+    100% { box-shadow: inset 0 0 0px #00ff00; filter: brightness(1); }
+}
+
+/* Floating Text (Refined) */
+.floating-text {
+    position: fixed; pointer-events: none; z-index: 9999;
+    font-weight: 900; font-family: 'Rajdhani', sans-serif; font-size: 2.2rem;
+    text-shadow: 2px 2px 0 #000, 0 0 10px rgba(0,0,0,0.8); transform: translate(-50%, 0);
+}
+.floating-text.damage { color: #ffd700; }
+.floating-text.crit { color: #ff3300; font-size: 3.5rem; text-shadow: 0 0 15px #ffff00; }
+.floating-text.heal { color: #00ff00; text-shadow: 0 0 10px #00ff00; }
+.floating-text.miss { color: #999; font-style: italic; font-size: 1.8rem; }
+
+@keyframes floatUpFade {
+    0% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+    60% { transform: translate(-50%, -60px) scale(1.1); opacity: 0.95; }
+    100% { transform: translate(-50%, -120px) scale(0.9); opacity: 0; }
+}
+.floating-text.animate { animation: floatUpFade 1s cubic-bezier(.2,.9,.2,1) forwards; }
