@@ -1,3 +1,4 @@
+
 // Centralized Game State
 export const Game = {
     player: {
@@ -13,9 +14,14 @@ export const Game = {
         baseDefense: 2,
         // Nuevas Estadísticas RNG
         baseCritChance: 0.05, // 5% base
+        baseCritDamage: 1.5,  // 150% Damage on crit
         baseEvasion: 0.05,    // 5% base
+        
         effectiveCrit: 0.05,
+        effectiveCritDamage: 1.5,
         effectiveEvasion: 0.05,
+        mpCostReduction: 0,   // Percentage (0.1 = 10%)
+        expBonus: 0,          // Percentage
 
         col: 1000,
         currentFloor: 1,
@@ -40,11 +46,19 @@ export const Game = {
         equippedSkills: ['sonic_leap'], // IDs of skills active in combat (Max 4)
         skillPoints: 0,
         
+        // Talent System (Awakening)
+        unlockedTalents: [], // Array of IDs
+        equippedTalents: [], // Max 3
+        
         materials: {},
         activeStatusEffects: [], 
         lastCombatAction: null, 
         attackComboCount: 0, 
         isAdmin: false,
+
+        // Drop Luck & Pity System
+        bossPity: 0, // Increases 0.05 per boss kill without mythic/epic drop
+        obtainedUniqueDrops: [] // Stores IDs of special one-time items
     },
     currentCombat: {
         active: false, 
@@ -52,7 +66,8 @@ export const Game = {
         isBoss: false, 
         playerTurn: true,
         turnCount: 0, 
-        drops: [] // Store drops for victory screen
+        drops: [], // Store drops for victory screen
+        bonusLuck: 0 // Captured luck at start of fight
     },
     settings: {
         musicVolume: 0.3,

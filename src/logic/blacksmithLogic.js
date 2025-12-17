@@ -1,3 +1,4 @@
+
 import { Game } from '../state/gameState.js';
 import { blacksmithRecipes, baseItems } from '../data/items.js';
 import { floorData } from '../data/floors.js';
@@ -10,6 +11,14 @@ let selectedUpgradeUid = null;
 const MAX_ITEM_LEVEL = 10;
 const UPGRADE_PERCENT_STEPS = [0, 10, 15, 18, 22, 26, 30, 35, 40, 50];
 
+// Material Requirements per Level Range
+const UPGRADE_MATS = {
+    low: { id: 'iron_ore', name: 'Mena de Hierro' },    // Lv 1-3
+    mid: { id: 'silver_ingot', name: 'Lingote Plata' }, // Lv 4-6
+    high: { id: 'blue_crystal', name: 'Cristal Azul' }, // Lv 7-9
+    max: { id: 'divine_fragment', name: 'Fragmento Divino' } // Lv 10
+};
+
 export function renderBlacksmithRecipes() {
     const grid = document.getElementById('forge-recipes-grid');
     if(!grid) return;
@@ -17,7 +26,6 @@ export function renderBlacksmithRecipes() {
     
     const floorRecipes = floorData[Game.player.currentFloor]?.blacksmithRecipes || [];
     
-    // Create sections if needed, for now just flat list but stylized
     Object.entries(blacksmithRecipes).forEach(([key, recipe]) => {
         if (!floorRecipes.includes(key)) return;
         
@@ -168,7 +176,6 @@ function selectUpgradeItem(item, element) {
     selectedUpgradeUid = item.uid;
 
     const level = item.level || 1;
-    const cost = Math.floor(100 * level * 1.5);
     const btn = document.getElementById('confirm-upgrade-btn');
     const preview = document.getElementById('upgrade-preview');
 
@@ -179,6 +186,7 @@ function selectUpgradeItem(item, element) {
         return;
     }
 
+    // Determine Stats
     const baseStats = baseItems[item.id].stats || {};
     const currentPercent = UPGRADE_PERCENT_STEPS[Math.min(level-1, UPGRADE_PERCENT_STEPS.length-1)] || 0;
     const nextPercent = UPGRADE_PERCENT_STEPS[Math.min(level, UPGRADE_PERCENT_STEPS.length-1)];
@@ -187,17 +195,9 @@ function selectUpgradeItem(item, element) {
     ['attack','defense','hp','mp'].forEach(stat => {
         if(baseStats[stat]) {
             const baseVal = baseStats[stat];
-            // Current bonus
             const currBonus = Math.floor(baseVal * (currentPercent/100));
-            // Next bonus
             const nextBonus = Math.floor(baseVal * (nextPercent/100));
-            
-            const currentTotal = (item.stats && item.stats[stat]) ? item.stats[stat] : (baseVal + currBonus);
-            // Logic fix: Item stats in state already include bonuses? 
-            // Usually we store modified stats. Let's assume item.stats holds current total.
-            
-            // To predict next, subtract old bonus, add new bonus
-            // But simplified: base + newBonus
+            const currentTotal = baseVal + currBonus; // Logic assumption: item.stats syncs with this
             const predicted = baseVal + nextBonus;
             
             statsHtml += `
@@ -208,42 +208,143 @@ function selectUpgradeItem(item, element) {
         }
     });
 
+    // Cost & Risk Calculation
+    const colCost = Math.floor(100 * level * 1.5);
+    let successRate = 100;
+    let matReq = { ...UPGRADE_MATS.low, qty: 1 };
+
+    if (level >= 3 && level < 6) { 
+        successRate = 80; 
+        matReq = { ...UPGRADE_MATS.mid, qty: 1 };
+    } else if (level >= 6 && level < 9) { 
+        successRate = 60; 
+        matReq = { ...UPGRADE_MATS.high, qty: 2 };
+    } else if (level >= 9) { 
+        successRate = 40; 
+        matReq = { ...UPGRADE_MATS.max, qty: 1 };
+    }
+
+    // Check Materials
+    const totalMatOwned = Game.player.inventory.reduce((acc, i) => i.id === matReq.id ? acc + (i.count||1) : acc, 0);
+    const hasMats = totalMatOwned >= matReq.qty;
+    const hasCol = Game.player.col >= colCost;
+
     preview.innerHTML = `
         <div style="text-align:center; margin-bottom:10px;">
             <span style="font-size:2rem;">${baseItems[item.id].icon}</span>
-            <h4>${baseItems[item.id].name}</h4>
-            <p>Subir a Nivel ${level+1}</p>
+            <h4>${baseItems[item.id].name} (+${level} -> +${level+1})</h4>
         </div>
         <div class="upgrade-stats-list">
             ${statsHtml}
         </div>
+        <div style="margin-top:15px; border-top:1px solid #333; padding-top:10px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                <span>Éxito:</span> <span style="color:${successRate < 100 ? '#ffcc00' : '#00ff00'}">${successRate}%</span>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+                <span>Material:</span> 
+                <span class="${hasMats ? 'ok' : 'missing'}">${matReq.name} x${matReq.qty} (${totalMatOwned})</span>
+            </div>
+        </div>
     `;
     
-    document.getElementById('upgrade-cost').textContent = cost;
-    btn.disabled = Game.player.col < cost;
+    document.getElementById('upgrade-cost').textContent = colCost;
+    btn.textContent = `Mejorar (${colCost} Col)`;
+    btn.disabled = !(hasCol && hasMats);
     
-    btn.onclick = () => confirmUpgrade(item, cost, nextPercent);
+    // Add risk warning to btn text if low chance
+    if (successRate < 100) {
+        btn.classList.add('risky');
+    } else {
+        btn.classList.remove('risky');
+    }
+    
+    btn.onclick = () => confirmUpgrade(item, colCost, nextPercent, successRate, matReq);
 }
 
-function confirmUpgrade(item, cost, percent) {
+function confirmUpgrade(item, cost, percent, successRate, matReq) {
     if (Game.player.col < cost) return;
     
-    Game.player.col -= cost;
-    item.level = (item.level || 1) + 1;
-    
-    const baseStats = baseItems[item.id].stats || {};
-    ['attack','defense','hp','mp'].forEach(stat => {
-        if (baseStats[stat]) {
-            const increase = Math.floor(baseStats[stat] * (percent/100));
-            item.stats[stat] = baseStats[stat] + increase;
+    // Consume Materials
+    let remaining = matReq.qty;
+    for (let i = Game.player.inventory.length - 1; i >= 0; i--) {
+        const invItem = Game.player.inventory[i];
+        if (invItem.id === matReq.id) {
+            const avail = invItem.count || 1;
+            const take = Math.min(avail, remaining);
+            invItem.count = avail - take;
+            remaining -= take;
+            if (invItem.count <= 0) Game.player.inventory.splice(i, 1);
+            if (remaining <= 0) break;
         }
-    });
+    }
 
-    showNotification("¡Equipo mejorado!", "success");
-    playSfx('anvil'); // Conceptual
-    calculateEffectiveStats();
-    updatePlayerHUD();
-    renderInventory(); 
-    renderEquipment();
-    renderUpgradeEquipmentList(); // Refresh list to update Level text
+    Game.player.col -= cost;
+
+    // RNG Roll
+    if (Math.random() * 100 < successRate) {
+        // Success
+        item.level = (item.level || 1) + 1;
+        const baseStats = baseItems[item.id].stats || {};
+        ['attack','defense','hp','mp'].forEach(stat => {
+            if (baseStats[stat]) {
+                const increase = Math.floor(baseStats[stat] * (percent/100));
+                item.stats[stat] = baseStats[stat] + increase;
+            }
+        });
+        showNotification("¡Mejora Exitosa! " + baseItems[item.id].name, "success");
+        
+        // --- VISUAL ANIMATION LOGIC ---
+        // Find the selected card in the DOM to animate it
+        const cards = document.querySelectorAll('#upgrade-equipment-list .item-card');
+        cards.forEach(card => {
+            if(card.classList.contains('selected')) {
+                card.classList.add('upgrade-success');
+                // Update text immediately for visual feedback before full render
+                const levelSpan = card.querySelector('.level');
+                if(levelSpan) levelSpan.textContent = `Lv.${item.level}`;
+            }
+        });
+        
+        // Re-select item logic to update preview immediately
+        selectUpgradeItem(item, document.querySelector('.item-card.selected') || document.createElement('div'));
+
+        // Update Stats & HUD IMMEDIATELY so the player feels the power up
+        calculateEffectiveStats();
+        updatePlayerHUD();
+
+        // Delay LIST re-render so animation plays
+        setTimeout(() => {
+            renderInventory(); 
+            renderEquipment();
+            renderUpgradeEquipmentList(); 
+        }, 800);
+
+    } else {
+        // Failure
+        showNotification("La mejora falló...", "error");
+        
+        // Consequence Logic
+        if (item.level > 6) {
+            item.level -= 1; // De-level
+            // Re-calc stats for lower level
+            const prevPercent = UPGRADE_PERCENT_STEPS[Math.min(item.level-1, UPGRADE_PERCENT_STEPS.length-1)] || 0;
+            const baseStats = baseItems[item.id].stats || {};
+            ['attack','defense','hp','mp'].forEach(stat => {
+                if (baseStats[stat]) {
+                    const increase = Math.floor(baseStats[stat] * (prevPercent/100));
+                    item.stats[stat] = baseStats[stat] + increase;
+                }
+            });
+            showNotification("¡El nivel del objeto disminuyó!", "error");
+        } else {
+            showNotification("Materiales perdidos, pero el objeto está a salvo.", "default");
+        }
+        // Failure updates immediately
+        calculateEffectiveStats();
+        updatePlayerHUD();
+        renderInventory(); 
+        renderEquipment();
+        renderUpgradeEquipmentList(); 
+    }
 }

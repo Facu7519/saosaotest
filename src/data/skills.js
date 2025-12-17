@@ -1,3 +1,4 @@
+
 export const skillDatabase = {
     // --- SWORD SKILLS (Active) ---
     'sonic_leap': {
@@ -109,6 +110,103 @@ export const skillDatabase = {
         growthEffect: 0.02,
         maxLevel: 10,
         cost: 3
+    }
+};
+
+export const talentDatabase = {
+    // Tiers: Latent (Common), Awakened (Rare), Ascendant (Epic), Transcendent (Legendary)
+    
+    // --- TIER 1: LATENT (Comunes - Mejoras estadísticas básicas) ---
+    'sharp_mind': { 
+        name: 'Mente Aguda', tier: 'Latent', icon: '🧠', 
+        description: 'Reduce el costo de MP en un 5%.', 
+        stats: { mpCostReduction: 0.05 } 
+    },
+    'light_step': { 
+        name: 'Paso Ligero', tier: 'Latent', icon: '🍃', 
+        description: 'Aumenta la Evasión un 2%.', 
+        stats: { evasion: 0.02 } 
+    },
+    'novice_striker': { 
+        name: 'Golpeador Novato', tier: 'Latent', icon: '🥊', 
+        description: 'Aumenta el Daño Crítico un 10%.', 
+        stats: { critDamage: 0.10 } 
+    },
+    'iron_skin': { 
+        name: 'Piel de Hierro', tier: 'Latent', icon: '🐢', 
+        description: 'Aumenta la Defensa base un 5%.', 
+        stats: { defensePct: 0.05 } 
+    },
+    'potion_enthusiast': {
+        name: 'Entusiasta de Pociones', tier: 'Latent', icon: '🧪',
+        description: 'Las pociones curan un 10% más.',
+        stats: { potionEfficiency: 0.10 }
+    },
+
+    // --- TIER 2: AWAKENED (Raros - Utilidad y Recursos) ---
+    'student_of_war': { 
+        name: 'Estudiante de Guerra', tier: 'Awakened', icon: '📚', 
+        description: '+10% de Experiencia obtenida.', 
+        stats: { expBonus: 0.10 } 
+    },
+    'mana_flow': { 
+        name: 'Flujo de Maná', tier: 'Awakened', icon: '🌊', 
+        description: 'Reduce el costo de MP en un 10%.', 
+        stats: { mpCostReduction: 0.10 } 
+    },
+    'precision_cut': { 
+        name: 'Corte Preciso', tier: 'Awakened', icon: '🎯', 
+        description: '+5% Probabilidad Crítica.', 
+        stats: { critChance: 0.05 } 
+    },
+    'meditation': {
+        name: 'Meditación', tier: 'Awakened', icon: '🧘',
+        description: 'Regenera 3 MP al final de cada turno.',
+        stats: { mpRegen: 3 }
+    },
+    'resilient_soul': {
+        name: 'Alma Resiliente', tier: 'Awakened', icon: '🛡️',
+        description: '+15% Resistencia a Estados Alterados.',
+        stats: { statusResist: 0.15 }
+    },
+
+    // --- TIER 3: ASCENDANT (Épicos - Combate avanzado) ---
+    'berserker_blood': { 
+        name: 'Sangre Berserker', tier: 'Ascendant', icon: '🩸', 
+        description: 'Daño Crítico +25% y Ataque +5%.', 
+        stats: { critDamage: 0.25, attackPct: 0.05 } 
+    },
+    'guardian_soul': { 
+        name: 'Alma Guardiana', tier: 'Ascendant', icon: '🏰', 
+        description: 'Defensa +10% y HP Máximo +15%.', 
+        stats: { defensePct: 0.10, hpPct: 0.15 } 
+    },
+    'soul_reaper': {
+        name: 'Segador de Almas', tier: 'Ascendant', icon: '💀',
+        description: 'Recupera 15 MP al derrotar un enemigo.',
+        stats: { mpOnKill: 15 }
+    },
+    'vampiric_touch': {
+        name: 'Toque Vampírico', tier: 'Ascendant', icon: '🧛',
+        description: 'Recupera 20 HP al derrotar un enemigo.',
+        stats: { hpOnKill: 20 }
+    },
+
+    // --- TIER 4: TRANSCENDENT (Legendarios - Game Changers) ---
+    'hero_destiny': { 
+        name: 'Destino del Héroe', tier: 'Transcendent', icon: '👑', 
+        description: 'Todos los atributos +15% y Reducción MP 20%.', 
+        stats: { attackPct: 0.15, defensePct: 0.15, hpPct: 0.15, mpCostReduction: 0.20 } 
+    },
+    'infinite_potential': {
+        name: 'Potencial Infinito', tier: 'Transcendent', icon: '🌌',
+        description: '+30% EXP, +30% Eficiencia Pociones, +10 Regen MP/turno.',
+        stats: { expBonus: 0.30, potionEfficiency: 0.30, mpRegen: 10 }
+    },
+    'titan_will': {
+        name: 'Voluntad de Titán', tier: 'Transcendent', icon: '🗿',
+        description: 'Inmune a estados alterados (100% Resist) y +25% HP.',
+        stats: { statusResist: 1.0, hpPct: 0.25 }
     }
 };
 

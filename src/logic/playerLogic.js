@@ -1,13 +1,17 @@
+
 import { Game } from '../state/gameState.js';
 import { baseItems } from '../data/items.js';
+import { talentDatabase } from '../data/skills.js';
 import { genUid, showNotification } from '../utils/helpers.js';
 import { updatePlayerHUD } from '../ui/hud.js';
+import { renderEquipment } from '../ui/inventory.js';
 
 export function calculateEffectiveStats() {
     const p = Game.player;
     let eqAtk = 0, eqDef = 0, eqHp = 0, eqMp = 0;
     let eqCrit = 0, eqEva = 0;
 
+    // 1. Equipment Stats
     for (const slot in p.equipment) {
         const it = p.equipment[slot];
         if (it && it.stats) {
@@ -15,39 +19,96 @@ export function calculateEffectiveStats() {
             eqDef += it.stats.defense || 0;
             eqHp += it.stats.hp || 0;
             eqMp += it.stats.mp || 0;
-            // Soporte para stats avanzados en items futuros
             eqCrit += it.stats.crit || 0; 
             eqEva += it.stats.evasion || 0;
         }
     }
-    p.effectiveAttack = p.baseAttack + eqAtk;
-    p.effectiveDefense = p.baseDefense + eqDef;
+
+    // 2. Talent Modifiers
+    let talentAtkPct = 0;
+    let talentDefPct = 0;
+    let talentHpPct = 0;
+    let talentMpCostRed = 0;
+    let talentCritDmg = 0;
+    let talentCritChance = 0;
+    let talentEva = 0;
+    let talentExpBonus = 0;
     
-    // Calcular Stats RNG
-    p.effectiveCrit = Math.min(0.50, p.baseCritChance + eqCrit + (p.level * 0.002)); // Cap 50%
-    p.effectiveEvasion = Math.min(0.40, p.baseEvasion + eqEva + (p.level * 0.001)); // Cap 40%
+    // Advanced Talent Stats (Additions)
+    let talentMpRegen = 0;
+    let talentMpOnKill = 0;
+    let talentHpOnKill = 0;
+    let talentStatusResist = 0;
+    let talentPotionEff = 0;
 
-    const oldMaxHp = p.maxHp;
-    const oldMaxMp = p.maxMp;
-    p.maxHp = p.baseMaxHp + eqHp;
-    p.maxMp = p.baseMaxMp + eqMp;
+    if (p.equippedTalents) {
+        p.equippedTalents.forEach(tId => {
+            const tData = talentDatabase[tId];
+            if (tData && tData.stats) {
+                if (tData.stats.attackPct) talentAtkPct += tData.stats.attackPct;
+                if (tData.stats.defensePct) talentDefPct += tData.stats.defensePct;
+                if (tData.stats.hpPct) talentHpPct += tData.stats.hpPct;
+                if (tData.stats.mpCostReduction) talentMpCostRed += tData.stats.mpCostReduction;
+                if (tData.stats.critDamage) talentCritDmg += tData.stats.critDamage;
+                if (tData.stats.critChance) talentCritChance += tData.stats.critChance;
+                if (tData.stats.evasion) talentEva += tData.stats.evasion;
+                if (tData.stats.expBonus) talentExpBonus += tData.stats.expBonus;
+                
+                // New Stats
+                if (tData.stats.mpRegen) talentMpRegen += tData.stats.mpRegen;
+                if (tData.stats.mpOnKill) talentMpOnKill += tData.stats.mpOnKill;
+                if (tData.stats.hpOnKill) talentHpOnKill += tData.stats.hpOnKill;
+                if (tData.stats.statusResist) talentStatusResist += tData.stats.statusResist;
+                if (tData.stats.potionEfficiency) talentPotionEff += tData.stats.potionEfficiency;
+            }
+        });
+    }
 
+    // 3. Apply Totals
+    const rawMaxHp = p.baseMaxHp + eqHp;
+    const rawMaxMp = p.baseMaxMp + eqMp;
+    const rawAtk = p.baseAttack + eqAtk;
+    const rawDef = p.baseDefense + eqDef;
+
+    p.maxHp = Math.floor(rawMaxHp * (1 + talentHpPct));
+    p.maxMp = Math.floor(rawMaxMp); 
+    
+    // Store multipliers for combat logic use
+    p.effectiveAttack = Math.floor(rawAtk * (1 + talentAtkPct));
+    p.effectiveDefense = Math.floor(rawDef * (1 + talentDefPct));
+    
+    // Stats RNG
+    p.effectiveCrit = Math.min(0.75, p.baseCritChance + eqCrit + talentCritChance + (p.level * 0.002)); 
+    p.effectiveEvasion = Math.min(0.60, p.baseEvasion + eqEva + talentEva + (p.level * 0.001)); 
+    
+    // New Advanced Stats attached to player object for Logic use
+    p.effectiveCritDamage = p.baseCritDamage + talentCritDmg;
+    p.mpCostReduction = talentMpCostRed;
+    p.expBonus = talentExpBonus;
+    p.mpRegen = talentMpRegen;
+    p.mpOnKill = talentMpOnKill;
+    p.hpOnKill = talentHpOnKill;
+    p.statusResist = talentStatusResist; // 0.0 to 1.0
+    p.potionEfficiency = 1 + talentPotionEff; // Base 1 (100%)
+
+    // HP/MP Cap Check
     if (p.hp > p.maxHp) p.hp = p.maxHp;
-    else if (p.maxHp > oldMaxHp && p.hp > 0) p.hp = Math.min(p.hp + (p.maxHp - oldMaxHp), p.maxHp);
-    
     if (p.mp > p.maxMp) p.mp = p.maxMp;
-    else if (p.maxMp > oldMaxMp) p.mp = Math.min(p.mp + (p.maxMp - oldMaxMp), p.maxMp);
 }
 
 export function trainPlayer() {
-    // Replaced by Skill Tree
     openModal('skillsModal');
     return false;
 }
 
 export function gainExp(amount) {
     if (Game.player.hp <= 0) return;
-    Game.player.currentExp += amount;
+    
+    // Apply EXP Bonus from Talents
+    const bonus = Game.player.expBonus || 0;
+    const totalExp = Math.floor(amount * (1 + bonus));
+    
+    Game.player.currentExp += totalExp;
     while (Game.player.currentExp >= Game.player.neededExp) {
         levelUp();
     }
@@ -105,19 +166,25 @@ export function equipItemByUid(uid) {
     const item = Game.player.inventory[idx];
     const base = baseItems[item.id] || item;
     
+    // Detailed Level Restriction Check
     if (Game.player.level < (base.levelReq || 1)) {
-        showNotification("Nivel insuficiente.", "error");
+        showNotification(
+            `⛔ No se puede equipar [${base.name}]\n` +
+            `Nivel Requerido: ${base.levelReq || 1} | Tu Nivel: ${Game.player.level}`, 
+            "error"
+        );
         return;
     }
 
     let slot = base.slot;
+    let extraMsg = '';
     
     // Logic for Dual Wield
     if (slot === 'weapon' && Game.player.unlockedSkills['dual_wield']) {
         if (Game.player.equipment.weapon) {
             if (Game.player.equipment.shield) {
                 unequipItem('shield');
-                showNotification("Escudo desequipado para usar doble espada.", "default");
+                extraMsg += "⚠️ Escudo desequipado para Doble Empuñadura.\n";
             }
             if (!Game.player.equipment.weapon2) {
                 slot = 'weapon2';
@@ -129,7 +196,7 @@ export function equipItemByUid(uid) {
     
     if (slot === 'shield' && Game.player.equipment.weapon2) {
         unequipItem('weapon2');
-        showNotification("Segunda espada desequipada.", "default");
+        extraMsg += "⚠️ Espada secundaria desequipada para usar Escudo.\n";
     }
 
     if (Game.player.equipment[slot]) {
@@ -137,9 +204,26 @@ export function equipItemByUid(uid) {
     }
 
     Game.player.equipment[slot] = Game.player.inventory.splice(idx, 1)[0];
-    showNotification(`${base.name} equipado.`, "success");
+    
+    // Success Notification with Stat Preview (Simplified)
+    let statText = "";
+    if (base.stats) {
+        const stats = [];
+        if (base.stats.attack) stats.push(`ATK +${base.stats.attack}`);
+        if (base.stats.defense) stats.push(`DEF +${base.stats.defense}`);
+        statText = stats.join(", ");
+    }
+
+    showNotification(
+        `⚔️ Equipado: ${base.name}\n` +
+        `${statText ? statText + "\n" : ""}` + 
+        extraMsg,
+        "equip" // Using new equip style
+    );
+
     calculateEffectiveStats();
     updatePlayerHUD();
+    renderEquipment(slot); // Trigger render with animation on this slot
 }
 
 export function unequipItem(slot) {
@@ -154,13 +238,18 @@ export function unequipItem(slot) {
 export function useConsumable(item, index) {
     const base = baseItems[item.id] || item;
     let used = false;
+    
+    // Talent: Potion Efficiency
+    const multiplier = Game.player.potionEfficiency || 1;
 
     if (base.effect.hp && Game.player.hp < Game.player.maxHp) {
-        Game.player.hp = Math.min(Game.player.hp + base.effect.hp, Game.player.maxHp);
+        const amount = Math.floor(base.effect.hp * multiplier);
+        Game.player.hp = Math.min(Game.player.hp + amount, Game.player.maxHp);
         used = true;
     }
     if (base.effect.mp && Game.player.mp < Game.player.maxMp) {
-        Game.player.mp = Math.min(Game.player.mp + base.effect.mp, Game.player.maxMp);
+        const amount = Math.floor(base.effect.mp * multiplier);
+        Game.player.mp = Math.min(Game.player.mp + amount, Game.player.maxMp);
         used = true;
     }
     if (base.effect.cure) {
@@ -174,11 +263,50 @@ export function useConsumable(item, index) {
     if (used) {
         item.count--;
         if (item.count <= 0) Game.player.inventory.splice(index, 1);
-        showNotification(`Usado ${base.name}`, "success");
+        showNotification(`🧪 Usado: ${base.name}`, "success");
         updatePlayerHUD();
         return true;
     } else {
-        showNotification("No tiene efecto ahora.", "default");
+        showNotification(`❌ No puedes usar [${base.name}] ahora.\nHP/MP ya están al máximo o no tienes el estado alterado.`, "error");
         return false;
+    }
+}
+
+// --- Talent System Logic ---
+export function rollTalent() {
+    if (Game.player.skillPoints < 5) {
+        showNotification("Necesitas 5 SP para despertar un talento.", "error");
+        return null;
+    }
+
+    Game.player.skillPoints -= 5;
+
+    // Weights Revised: Latent (55%), Awakened (30%), Ascendant (12%), Transcendent (3%)
+    const rand = Math.random() * 100;
+    let tier = 'Latent';
+    if (rand > 97) tier = 'Transcendent'; // Top 3%
+    else if (rand > 85) tier = 'Ascendant'; // Next 12%
+    else if (rand > 55) tier = 'Awakened'; // Next 30%
+    else tier = 'Latent'; // Bottom 55%
+
+    // Filter talents by tier
+    const pool = Object.entries(talentDatabase).filter(([id, t]) => t.tier === tier);
+    if (pool.length === 0) {
+        // Fallback if pool is empty (should not happen if db is populated)
+        Game.player.skillPoints += 5;
+        return { result: 'error' };
+    }
+
+    const [id, data] = pool[Math.floor(Math.random() * pool.length)];
+
+    // Check Duplicate
+    if (!Game.player.unlockedTalents) Game.player.unlockedTalents = [];
+    
+    if (Game.player.unlockedTalents.includes(id)) {
+        Game.player.skillPoints += 2; // Refund
+        return { result: 'duplicate', talent: data, refund: 2 };
+    } else {
+        Game.player.unlockedTalents.push(id);
+        return { result: 'new', talent: data, id: id };
     }
 }

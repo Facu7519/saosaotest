@@ -1,3 +1,4 @@
+
 import { Game } from '../state/gameState.js';
 import { baseItems } from '../data/items.js';
 import { useConsumable, equipItemByUid, unequipItem } from '../logic/playerLogic.js';
@@ -201,13 +202,13 @@ function handleItemClick(base, item) {
     } else if (['weapon','shield','armor','accessory'].includes(base.type)) {
         equipItemByUid(item.uid);
         renderInventory(); 
-        renderEquipment(); 
+        // Logic handles renderEquipment call now to support animation
     } else {
         showNotification(`${base.name}: ${base.description || 'Sin descripción.'}`);
     }
 }
 
-export function renderEquipment() {
+export function renderEquipment(highlightSlot = null) {
     const slotsContainer = document.querySelector('.equipment-slots');
     
     const slotsToRender = [
@@ -230,6 +231,11 @@ export function renderEquipment() {
         el.id = `equip-${slotDef.key}`;
         el.className = 'equipment-slot sao-electric-hover';
         if (slotDef.special) el.classList.add('dual-wield-slot');
+
+        // Apply visual animation if this slot was just equipped
+        if (highlightSlot && slotDef.key === highlightSlot) {
+            el.classList.add('equip-anim');
+        }
 
         const item = Game.player.equipment[slotDef.key];
 
