@@ -1,5 +1,7 @@
 {
-  "name": "SAO: Aincrad Chronicles (Modular)",
-  "description": "A modularized version of the SAO RPG text-based game using ES Modules and clean architecture.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "name": "",
+  "description": ""
 }
