@@ -49,6 +49,7 @@ function startCombat(mobTemplate, isBoss) {
     const activeView = document.getElementById('combat-active-view');
     const resultView = document.getElementById('combat-results-view');
     
+    // Reset view states & classes for fresh combat
     activeView.style.display = 'block';
     activeView.classList.remove('fade-out-active');
     resultView.style.display = 'none';
@@ -59,9 +60,10 @@ function startCombat(mobTemplate, isBoss) {
     enemy.currentHp = enemy.hp;
     enemy.activeStatusEffects = [];
     
+    // Boss AI State
     if (isBoss) {
-        enemy.phase = 1;
-        enemy.turnCounter = 0;
+        enemy.phase = 1; // 1: Normal, 2: Enraged (<50% HP)
+        enemy.turnCounter = 0; // Local turn counter for patterns
         enemy.isEnraged = false;
     }
 
@@ -70,7 +72,7 @@ function startCombat(mobTemplate, isBoss) {
         enemy: enemy,
         isBoss: isBoss,
         playerTurn: true,
-        turnCount: 1,
+        turnCount: 1, // Global combat turn
         drops: [] 
     };
     
@@ -85,7 +87,8 @@ function startCombat(mobTemplate, isBoss) {
     
     if(isBoss) {
         addCombatLog(`👹 PRECAUCIÓN: ¡Jefe de Piso ${enemy.name}!`, 'system-message');
-        triggerSkillAnimation('anim-starburst', 1, true); 
+        // Intro Boss Animation
+        triggerSkillAnimation('anim-starburst', 0); 
     } else {
         addCombatLog(`⚔️ ¡Combate iniciado contra ${enemy.name}!`, 'system-message');
     }
@@ -97,6 +100,7 @@ export function showCombatOptions(type) {
     const skillContainer = document.getElementById('combat-skills-list-container');
     const potionContainer = document.getElementById('combat-potions-list-container');
     
+    // Toggle logic
     const isSkillsVisible = skillContainer.style.display === 'flex';
     const isPotionsVisible = potionContainer.style.display === 'flex';
 
@@ -105,10 +109,13 @@ export function showCombatOptions(type) {
 
     if (type === 'skills') {
         if (isSkillsVisible) return; 
+
         skillContainer.innerHTML = '';
+        
+        // Filter skills: must be active AND present in equippedSkills list
         const equippedIds = Game.player.equippedSkills || [];
         const skills = Object.entries(Game.player.unlockedSkills)
-            .filter(([id, level]) => equippedIds.includes(id))
+            .filter(([id, level]) => equippedIds.includes(id)) // Only equipped
             .map(([id, level]) => ({ id, level, ...skillDatabase[id] }))
             .filter(s => s.type === 'active');
         
@@ -117,6 +124,7 @@ export function showCombatOptions(type) {
         } else {
             skills.forEach(skill => {
                 let currentMpCost = skill.mpCost + (skill.mpGrowth * (skill.level - 1));
+                // Apply MP Reduction Talent
                 if (Game.player.mpCostReduction) {
                     currentMpCost = Math.floor(currentMpCost * (1 - Game.player.mpCostReduction));
                 }
@@ -125,8 +133,10 @@ export function showCombatOptions(type) {
                 const btn = document.createElement('button');
                 btn.className = 'combat-sub-btn'; 
                 btn.innerHTML = `<span class="icon">${skill.icon}</span> ${skill.name} <span class="cost">${currentMpCost} MP</span>`;
+                
                 const canUse = Game.player.mp >= currentMpCost;
                 btn.disabled = !canUse;
+                
                 btn.onclick = () => performSkill(skill, currentMpCost);
                 skillContainer.appendChild(btn);
             });
@@ -134,8 +144,10 @@ export function showCombatOptions(type) {
         skillContainer.style.display = 'flex';
     } else if (type === 'potions') {
         if (isPotionsVisible) return;
+
         potionContainer.innerHTML = '';
         const potions = Game.player.inventory.filter(i => (i.type === 'consumable' && (i.effect.hp || i.effect.mp)));
+        
         if (potions.length === 0) {
              potionContainer.innerHTML = '<p style="width:100%; text-align:center;">No tienes pociones.</p>';
         } else {
@@ -151,17 +163,24 @@ export function showCombatOptions(type) {
     }
 }
 
+// --- LOGIC HELPER: Calculate Hit (Dodge/Crit) ---
 function calculateHit(sourceAtk, targetDef, critChance, dodgeChance, critDamageMultiplier = 1.5) {
+    // 1. Check Dodge
     if (Math.random() < dodgeChance) {
         return { damage: 0, isCrit: false, isMiss: true };
     }
+
+    // 2. Base Damage
     const raw = Math.max(1, sourceAtk - targetDef);
-    let damage = Math.floor(raw * (0.9 + Math.random() * 0.2)); 
+    let damage = Math.floor(raw * (0.9 + Math.random() * 0.2)); // Variance +/- 10%
+
+    // 3. Check Crit
     let isCrit = false;
     if (Math.random() < critChance) {
         isCrit = true;
-        damage = Math.floor(damage * critDamageMultiplier);
+        damage = Math.floor(damage * critDamageMultiplier); // Crit Multiplier
     }
+
     return { damage, isCrit, isMiss: false };
 }
 
@@ -169,6 +188,7 @@ function performSkill(skill, cost) {
     if (Game.player.mp < cost) return;
     Game.player.mp -= cost;
     
+    // Skill factors
     const levelFactor = (skill.growthPct * (skill.level - 1));
     const totalMultiplier = skill.baseDamagePct + levelFactor;
     
@@ -179,27 +199,31 @@ function performSkill(skill, cost) {
         passiveAtkBonus += (data.baseEffect + (data.growthEffect * (lvl - 1)));
     }
 
+    // Calculate raw attack power for skill
     const skillAtkPower = Game.player.effectiveAttack * passiveAtkBonus * totalMultiplier;
+    
+    // Use calculateHit but with skill power
+    // Skills usually have higher accuracy, so we halve enemy dodge chance
     const hitResult = calculateHit(
         skillAtkPower, 
         Game.currentCombat.enemy.defense, 
         Game.player.effectiveCrit + 0.1, 
         0.02,
-        Game.player.effectiveCritDamage
+        Game.player.effectiveCritDamage // Use new talent stat
     );
     
     document.getElementById('combat-skills-list-container').style.display = 'none';
 
-    // Trigger dynamic multi-hit animation
     triggerSkillAnimation(skill.animClass, skill.hits);
 
     setTimeout(() => {
         let msg = `✨ ${skill.name}`;
         if (hitResult.isCrit) msg += " (CRIT!)";
         addCombatLog(msg, 'player-action');
+        
         dealDamageResult(hitResult, Game.currentCombat.enemy, 'player', skill.hits);
         if (Game.currentCombat.enemy.currentHp > 0) endTurn();
-    }, 150 * Math.min(skill.hits, 8)); // Delay result slightly based on animation length
+    }, 600);
 }
 
 function performPotion(item) {
@@ -207,10 +231,14 @@ function performPotion(item) {
     if (idx !== -1) {
         const playerEl = document.getElementById('combat-player-display');
         playerEl.classList.add('heal-flash');
+        
         showFloatingText("Heal!", playerEl, { type: 'heal' });
+
         useConsumable(Game.player.inventory[idx], idx);
         addCombatLog(`🧪 Usaste ${item.name}.`, 'player-action');
+        
         document.getElementById('combat-potions-list-container').style.display = 'none';
+        
         setTimeout(() => {
             playerEl.classList.remove('heal-flash');
             endTurn();
@@ -226,10 +254,12 @@ export function combatAction(actionType) {
             Game.player.effectiveAttack, 
             Game.currentCombat.enemy.defense || 0,
             Game.player.effectiveCrit,
-            0.05,
-            Game.player.effectiveCritDamage
+            0.05, // Base enemy evasion
+            Game.player.effectiveCritDamage // Use talent stat
         );
+        
         triggerSkillAnimation('anim-slash-normal', 1);
+        
         setTimeout(() => {
             addCombatLog(`🗡️ Atacas a ${Game.currentCombat.enemy.name}.`, 'player-action');
             dealDamageResult(hitResult, Game.currentCombat.enemy, 'player');
@@ -240,6 +270,7 @@ export function combatAction(actionType) {
     }
 }
 
+// Replaces simplified dealDamage
 function dealDamageResult(hitResult, target, source, hits = 1) {
     const isPlayerTarget = (source === 'enemy');
     const displayEl = isPlayerTarget ? document.getElementById('combat-player-display') : document.getElementById('combat-enemy-display');
@@ -251,6 +282,7 @@ function dealDamageResult(hitResult, target, source, hits = 1) {
     }
 
     const amount = hitResult.damage;
+    
     if (isPlayerTarget) {
         Game.player.hp = Math.max(0, Game.player.hp - amount);
         Game.player.attackComboCount = 0;
@@ -266,8 +298,10 @@ function dealDamageResult(hitResult, target, source, hits = 1) {
     updateComboDisplay();
     updateCombatUI();
 
+    // Floating Text Logic
     if (hitResult.isCrit) {
         showFloatingText(`CRIT! -${amount}`, displayEl, { type: 'crit', large: true, shaky: true });
+        // Screen Shake on Player Crit or Heavy Hit
         if (!isPlayerTarget) document.body.classList.add('screen-shake');
         setTimeout(()=> document.body.classList.remove('screen-shake'), 450);
     } else {
@@ -294,6 +328,7 @@ function updateComboDisplay() {
 
 function processStatusEffects(entity, isPlayer) {
     if (isPlayer) {
+        // Passive Healing Skill
         if (Game.player.unlockedSkills['battle_healing']) {
             const lvl = Game.player.unlockedSkills['battle_healing'];
             const data = skillDatabase['battle_healing'];
@@ -303,6 +338,8 @@ function processStatusEffects(entity, isPlayer) {
                  showFloatingText(`+${Math.floor(heal)}`, document.getElementById('combat-player-display'), { type: 'heal' });
             }
         }
+        
+        // Talent: MP Regeneration
         if (Game.player.mpRegen && Game.player.mpRegen > 0) {
             if (Game.player.mp < Game.player.maxMp) {
                 Game.player.mp = Math.min(Game.player.maxMp, Game.player.mp + Game.player.mpRegen);
@@ -315,24 +352,36 @@ function endTurn() {
     Game.currentCombat.playerTurn = false;
     processStatusEffects(Game.player, true);
     updateCombatUI();
+
     if (Game.player.hp <= 0) { endCombat(false); return; }
+    
+    // Increased delay for enemy turn so player can read logs
     setTimeout(() => { if(Game.currentCombat.active) enemyTurn(); }, 1500);
 }
 
+// --- NEW ADVANCED BOSS AI ---
 function enemyTurn() {
     if(!Game.currentCombat.active) return;
     const enemy = Game.currentCombat.enemy;
     const isBoss = Game.currentCombat.isBoss;
-    Game.currentCombat.turnCount++;
+
+    Game.currentCombat.turnCount++; // Increment global turn
 
     if (isBoss) {
         executeBossAI(enemy);
     } else {
+        // Simple Monster Logic
         const enemyCrit = 0.05;
-        const hitResult = calculateHit(enemy.attack, Game.player.effectiveDefense, enemyCrit, Game.player.effectiveEvasion);
+        const hitResult = calculateHit(
+            enemy.attack, 
+            Game.player.effectiveDefense, 
+            enemyCrit, 
+            Game.player.effectiveEvasion
+        );
         addCombatLog(`${enemy.name} ataca!`, 'enemy-action');
         dealDamageResult(hitResult, Game.player, 'enemy');
     }
+    
     if(Game.player.hp > 0) {
         Game.currentCombat.playerTurn = true;
         updateCombatUI();
@@ -344,26 +393,48 @@ function executeBossAI(boss) {
     const hpPercent = boss.currentHp / boss.hp;
     const displayEl = document.getElementById('combat-enemy-display');
 
+    // --- PHASE CHECK ---
+    // Transition to Phase 2 (Enrage) if HP < 50% and not already enraged
     if (hpPercent < 0.5 && !boss.isEnraged) {
         boss.isEnraged = true;
         boss.phase = 2;
+        
+        // Phase Change Effects
         addCombatLog(`⚠️ ¡${boss.name} ENTRA EN FASE 2: ENFURECIDO!`, 'system-message');
         addCombatLog(`${boss.name} ruge y su ataque aumenta.`, 'enemy-action');
+        
+        // Visuals
         showFloatingText("¡ENRAGE!", displayEl, { color: '#ff0000', large: true, shaky: true });
-        displayEl.classList.add('damage-flash');
-        boss.attack = Math.floor(boss.attack * 1.3);
-        const healAmt = Math.floor(boss.hp * 0.1);
+        displayEl.classList.add('damage-flash'); // Reuse flash for effect
+        
+        // Buff
+        boss.attack = Math.floor(boss.attack * 1.3); // +30% Attack Permanent
+        const healAmt = Math.floor(boss.hp * 0.1); // Heal 10%
         boss.currentHp = Math.min(boss.hp, boss.currentHp + healAmt);
         showFloatingText(`+${healAmt}`, displayEl, { type: 'heal' });
+        
+        // Clear Debuffs (optional mechanics)
+        // boss.activeStatusEffects = []; 
+
+        // Skip attack this turn to show animation/warning? No, attack immediately for pressure!
+        // But reset pattern
         boss.turnCounter = 0; 
     }
 
+    // --- ATTACK PATTERN LOGIC ---
+    // Pattern: 
+    // Turn 1, 2: Normal Attack
+    // Turn 3: Special Skill (Skill 0)
+    // Turn 5 (Phase 2 only): Ultimate Skill (Skill 1)
+    
     const hasSkills = boss.skills && boss.skills.length > 0;
     const specialSkill = hasSkills ? boss.skills[0] : null;
     const ultimateSkill = (hasSkills && boss.skills.length > 1) ? boss.skills[1] : null;
+
     let action = 'attack';
     let selectedSkill = null;
 
+    // Determine Action based on pattern
     if (boss.isEnraged && ultimateSkill && (boss.turnCounter % 5 === 0)) {
         action = 'ultimate';
         selectedSkill = ultimateSkill;
@@ -372,17 +443,24 @@ function executeBossAI(boss) {
         selectedSkill = specialSkill;
     }
 
+    // Execution
     if (action === 'ultimate') {
         addCombatLog(`⛔ ¡${boss.name} prepara su ataque definitivo!`, 'system-message');
         setTimeout(() => {
-            triggerSkillAnimation('anim-starburst', 1);
-            performEnemySkill(boss, selectedSkill, 2.0);
+            triggerSkillAnimation('anim-starburst', 1); // Big animation
+            performEnemySkill(boss, selectedSkill, 2.0); // 200% power scaling or defined multiplier
         }, 400);
     } else if (action === 'special') {
         performEnemySkill(boss, selectedSkill, 1.0);
     } else {
-        const enemyCrit = 0.10 + (boss.isEnraged ? 0.1 : 0);
-        const hitResult = calculateHit(boss.attack, Game.player.effectiveDefense, enemyCrit, Game.player.effectiveEvasion);
+        // Normal Attack
+        const enemyCrit = 0.10 + (boss.isEnraged ? 0.1 : 0); // Higher crit if enraged
+        const hitResult = calculateHit(
+            boss.attack, 
+            Game.player.effectiveDefense, 
+            enemyCrit, 
+            Game.player.effectiveEvasion
+        );
         addCombatLog(`${boss.name} ataca ferozmente.`, 'enemy-action');
         dealDamageResult(hitResult, Game.player, 'enemy');
     }
@@ -390,33 +468,53 @@ function executeBossAI(boss) {
 
 function performEnemySkill(boss, skill, extraMultiplier = 1.0) {
     addCombatLog(`${boss.name} usa 【${skill.name}】!`, 'enemy-action');
+    
+    // Status Effect Logic
     if (skill.statusEffect) {
         const resistChance = Game.player.statusResist || 0;
+        // Logic: Boss status effects are harder to resist in Phase 2
         const difficulty = boss.isEnraged ? 0.2 : 0;
+        
         if (Math.random() > (resistChance - difficulty)) {
+            // Apply effect (Simplified visual log for now)
             addCombatLog(`💥 ¡Sufres ${skill.statusEffect.type}!`, 'enemy-action');
+            // In a full implementation, push to Game.player.activeStatusEffects here
         } else {
             addCombatLog(`🛡️ ¡Resististe ${skill.statusEffect.type}!`, 'system-message');
             showFloatingText("RESIST", document.getElementById('combat-player-display'), { color: '#fff' });
         }
     }
+
     const multiplier = (skill.damageMultiplier || 1.5) * extraMultiplier;
     const dmg = Math.floor(boss.attack * multiplier);
-    triggerSkillAnimation('anim-slash-sonic', 1);
+    
+    // Skill Animation based on type (simple mapping)
+    const anim = skill.name.includes("Fuego") || skill.name.includes("Llama") ? 'anim-slash-normal' : 'anim-slash-sonic'; // Placeholder
+    triggerSkillAnimation(anim, 1);
+
+    // Deal damage directly (skills usually don't miss or crit in this simple logic, but damage is high)
     const hitResult = { damage: dmg, isCrit: false, isMiss: false };
-    setTimeout(() => { dealDamageResult(hitResult, Game.player, 'enemy'); }, 300);
+    
+    // Delay slightly for animation
+    setTimeout(() => {
+        dealDamageResult(hitResult, Game.player, 'enemy');
+    }, 300);
 }
 
 function updateCombatUI() {
     const p = Game.player;
     const e = Game.currentCombat.enemy;
     if(!e) return;
+    
     document.getElementById('combat-player-hp-current').textContent = Math.floor(p.hp);
     document.getElementById('combat-player-hp-max').textContent = p.maxHp;
-    document.getElementById('combat-player-hp-bar').style.width = `${Math.max(0, (p.hp/p.maxHp)*100)}%`;
+    const pHpBar = document.getElementById('combat-player-hp-bar');
+    pHpBar.style.width = `${Math.max(0, (p.hp/p.maxHp)*100)}%`;
+    
     document.getElementById('combat-enemy-hp-current').textContent = Math.floor(e.currentHp);
     document.getElementById('combat-enemy-hp-max').textContent = e.hp;
-    document.getElementById('combat-enemy-hp-bar-fill').style.width = `${Math.max(0, (e.currentHp/e.hp)*100)}%`;
+    const eHpBar = document.getElementById('combat-enemy-hp-bar-fill');
+    eHpBar.style.width = `${Math.max(0, (e.currentHp/e.hp)*100)}%`;
 
     if(Game.currentCombat.playerTurn) {
         document.getElementById('combat-player-display').classList.add('active-turn');
@@ -438,75 +536,62 @@ function addCombatLog(msg, type) {
     log.scrollTop = log.scrollHeight;
 }
 
-/**
- * Enhanced Visual Animation System
- * Spawns multiple elements for multi-hit skills with staggered delays.
- */
-function triggerSkillAnimation(animClass, hits = 1, isIntro = false) {
+function triggerSkillAnimation(animClass, hits = 1) {
     const layer = document.getElementById('combat-animation-layer');
     const enemyEl = document.getElementById('combat-enemy-display');
-    const modalContent = document.querySelector('#combatModal .modal-content');
     if (!layer || !enemyEl) return;
     
     const rect = enemyEl.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
+    const animEl = document.createElement('div');
+    animEl.className = `skill-anim ${animClass}`;
+    animEl.style.left = `${rect.left + rect.width/2}px`;
+    animEl.style.top = `${rect.top + rect.height/2}px`;
+    
+    layer.appendChild(animEl);
+    enemyEl.classList.add('shake-violent'); // CSS animation for element shake
+    
+    // Apply Modal Shake on heavy hits (skill usage)
+    const modalContent = document.querySelector('#combatModal .modal-content');
+    modalContent.classList.remove('shake-modal');
+    void modalContent.offsetWidth; // Force reflow
+    modalContent.classList.add('shake-modal');
 
-    // Use a loop to spawn multiple animation elements based on hit count
-    const actualHits = isIntro ? 1 : Math.min(hits, 16); 
-    const staggerDelay = hits > 4 ? 60 : 100;
-
-    for (let i = 0; i < actualHits; i++) {
-        setTimeout(() => {
-            const animEl = document.createElement('div');
-            animEl.className = `skill-anim ${animClass}`;
-            
-            // Random offset for multi-hits to make it look "wild"
-            const offsetX = (Math.random() - 0.5) * (rect.width * 0.6);
-            const offsetY = (Math.random() - 0.5) * (rect.height * 0.6);
-            const rotation = Math.random() * 360;
-
-            animEl.style.left = `${centerX + offsetX}px`;
-            animEl.style.top = `${centerY + offsetY}px`;
-            animEl.style.transform = `translate(-50%, -50%) rotate(${rotation}deg)`;
-            
-            layer.appendChild(animEl);
-            
-            // Shake effect on each hit
-            enemyEl.classList.remove('shake-violent');
-            void enemyEl.offsetWidth; // trigger reflow
-            enemyEl.classList.add('shake-violent');
-
-            if (hits > 5 || isIntro) {
-                modalContent.classList.remove('shake-modal');
-                void modalContent.offsetWidth;
-                modalContent.classList.add('shake-modal');
-            }
-
-            // Cleanup
-            setTimeout(() => {
-                if(animEl.parentNode) layer.removeChild(animEl);
-            }, 1000);
-
-        }, i * staggerDelay);
-    }
+    setTimeout(() => {
+        if(animEl.parentNode) layer.removeChild(animEl);
+        enemyEl.classList.remove('shake-violent');
+        modalContent.classList.remove('shake-modal');
+    }, 1000);
 }
 
 function endCombat(win, fled){
      Game.currentCombat.active = false;
      const modalContent = document.querySelector('#combatModal .modal-content');
      const activeView = document.getElementById('combat-active-view');
+     
      if (fled) {
          showNotification("Huiste.", "default");
          closeModal('combatModal');
          return;
      }
+
+     // Visual flair immediately to indicate combat over
      modalContent.classList.add(win ? 'combat-victory' : 'combat-defeat');
+
+     // Start Fade Out of Active View
      activeView.classList.add('fade-out-active');
+
+     // Process logic
      if (win) {
          const enemy = Game.currentCombat.enemy;
-         if (Game.player.hpOnKill) Game.player.hp = Math.min(Game.player.maxHp, Game.player.hp + Game.player.hpOnKill);
-         if (Game.player.mpOnKill) Game.player.mp = Math.min(Game.player.maxMp, Game.player.mp + Game.player.mpOnKill);
+         
+         // Talent: On Kill Resources
+         if (Game.player.hpOnKill) {
+             Game.player.hp = Math.min(Game.player.maxHp, Game.player.hp + Game.player.hpOnKill);
+         }
+         if (Game.player.mpOnKill) {
+             Game.player.mp = Math.min(Game.player.maxMp, Game.player.mp + Game.player.mpOnKill);
+         }
+
          const earnedDrops = [];
          if (enemy.drops) {
              Object.entries(enemy.drops).forEach(([itemId, chance]) => {
@@ -516,19 +601,27 @@ function endCombat(win, fled){
                  }
              });
          }
+         
          Game.currentCombat.drops = earnedDrops;
          gainExp(enemy.exp);
          Game.player.col += enemy.col;
+
+         // Unlock Floor Logic
          if (Game.currentCombat.isBoss) {
              const nextFloor = Game.player.currentFloor + 1;
+             // Check if next floor exists in data
              if (floorData[nextFloor]) {
                  if (!Game.player.unlockedFloors.includes(nextFloor)) {
                      Game.player.unlockedFloors.push(nextFloor);
                      floorData[nextFloor].unlocked = true;
                      showNotification(`¡Piso ${nextFloor} Desbloqueado!`, 'success', 8000);
                  }
+             } else {
+                 showNotification("¡Has completado todo el contenido actual!", 'success', 10000);
              }
          }
+
+         // Wait for fade out (500ms CSS + buffer) before switching
          setTimeout(() => {
              modalContent.classList.remove('combat-victory', 'combat-defeat');
              renderEndScreen(true, enemy);
@@ -545,29 +638,61 @@ function endCombat(win, fled){
 function renderEndScreen(win, enemy) {
     const activeView = document.getElementById('combat-active-view');
     const resultView = document.getElementById('combat-results-view');
+    
     activeView.style.display = 'none';
+    
+    // Setup Result View
     resultView.innerHTML = '';
     resultView.style.display = 'block';
-    resultView.classList.add('fade-in-result'); 
+    resultView.classList.add('fade-in-result'); // Trigger animation
+
     const drops = Game.currentCombat.drops || [];
-    let dropHtml = drops.length > 0 ? drops.map(id => {
-        const base = baseItems[id];
-        if (!base) return `<div class="loot-item">📦 ${id}</div>`;
-        const rarity = base.rarity || 'Common';
-        return `<div class="loot-card rarity-${rarity.toLowerCase()}"><div class="loot-icon">${base.icon}</div><div class="loot-name">${base.name}</div></div>`;
-    }).join('') : '<div class="loot-empty">Sin objetos obtenidos</div>';
+    let dropHtml = '';
+    if (drops.length > 0) {
+        dropHtml = drops.map(id => {
+            const base = baseItems[id];
+            if (!base) return `<div class="loot-item">📦 ${id}</div>`;
+            
+            const rarity = base.rarity || 'Common';
+            return `
+            <div class="loot-card rarity-${rarity.toLowerCase()}">
+                <div class="loot-icon">${base.icon}</div>
+                <div class="loot-name">${base.name}</div>
+            </div>`;
+        }).join('');
+    } else {
+        dropHtml = '<div class="loot-empty">Sin objetos obtenidos</div>';
+    }
 
     resultView.innerHTML = `
         <div class="result-card ${win ? 'victory' : 'defeat'}">
             <h2 class="result-title">${win ? '¡VICTORIA!' : 'DERROTA...'}</h2>
+            
             <div class="result-stats-container">
-                <div class="result-row"><span class="label">Enemigo</span><span class="value">${enemy.name}</span></div>
+                <div class="result-row">
+                    <span class="label">Enemigo</span>
+                    <span class="value">${enemy.name}</span>
+                </div>
                 ${win ? `
-                <div class="result-row"><span class="label">Experiencia</span><span class="value exp">+${enemy.exp} EXP</span></div>
-                <div class="result-row"><span class="label">Col (Dinero)</span><span class="value col">+${enemy.col} Col</span></div>
-                <div class="result-drops"><h3>Botín</h3><div class="drops-grid">${dropHtml}</div></div>
-                ` : `<div class="result-row"><span class="value" style="color:#bbb">Has sido revivido en el pueblo más cercano.</span></div>`}
+                <div class="result-row">
+                    <span class="label">Experiencia</span>
+                    <span class="value exp">+${enemy.exp} EXP</span>
+                </div>
+                <div class="result-row">
+                    <span class="label">Col (Dinero)</span>
+                    <span class="value col">+${enemy.col} Col</span>
+                </div>
+                <div class="result-drops">
+                    <h3>Botín</h3>
+                    <div class="drops-grid">${dropHtml}</div>
+                </div>
+                ` : `
+                <div class="result-row">
+                    <span class="value" style="color:#bbb">Has sido revivido en el pueblo más cercano.</span>
+                </div>
+                `}
             </div>
+
             <button class="action-btn large-btn" onclick="document.getElementById('combatModal').style.display='none'">Continuar Aventura</button>
         </div>
     `;
