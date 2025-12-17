@@ -22,13 +22,13 @@
             text-align: center; font-family: sans-serif; padding: 20px;
         }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0"
-  }
-}
-</script>
+    <script type="importmap">
+    {
+      "imports": {
+        "@google/genai": "https://esm.sh/@google/genai@^1.34.0"
+      }
+    }
+    </script>
 </head>
 
 <body>
@@ -81,44 +81,47 @@
                     <div class="sao-hp-text"><span id="player-hp-current">100</span>/<span id="player-hp-max">100</span></div>
                     <div class="sao-player-level">LV: <span id="player-level">1</span></div>
                 </div>
+                <div id="player-status-effects-display" class="status-effects-row"></div>
             </div>
             
-            <div class="resource-label">MP: <span id="player-mp-current">50</span>/<span id="player-mp-max">50</span></div>
-            <div class="resource-bar-container">
-                <div class="resource-bar-fill" id="mp-bar-fill" style="width: 100%; background: #3498db; height: 100%;"></div>
+            <div class="resource-row">
+                <div class="resource-label">MP: <span id="player-mp-current">50</span>/<span id="player-mp-max">50</span></div>
+                <div class="resource-bar-container">
+                    <div class="resource-bar-fill" id="mp-bar-fill" style="width: 100%; background: #3498db; height: 100%;"></div>
+                </div>
             </div>
 
-            <div class="resource-label">EXP: <span id="current-exp">0</span> / <span id="needed-exp">100</span></div>
-            <div class="resource-bar-container">
-                <div class="resource-bar-fill" id="exp-bar-fill" style="width: 0%; background: #9b59b6; height: 100%;"></div>
+            <div class="resource-row">
+                <div class="resource-label">EXP: <span id="current-exp">0</span> / <span id="needed-exp">100</span></div>
+                <div class="resource-bar-container">
+                    <div class="resource-bar-fill" id="exp-bar-fill" style="width: 0%; background: #9b59b6; height: 100%;"></div>
+                </div>
             </div>
             
-            <div class="col-display" style="margin-top: 10px;">Col: <span id="player-col">0</span> 💰</div>
+            <div class="col-display">Col: <span id="player-col">0</span> 💰</div>
             
             <div class="action-buttons">
-                <button class="action-btn" id="combat-btn">🗡️ Combatir</button>
-                <button class="action-btn" id="boss-combat-btn">👹 Jefe del Piso</button>
-                <button class="action-btn" id="train-skill-btn">⚔️ Habilidades</button>
-                <button class="action-btn" id="inventory-btn">🎒 Inventario</button> 
-                <button class="action-btn shop-btn" id="shop-btn">🛒 Tienda</button>
-                <button class="action-btn blackboard-btn" id="blacksmith-btn">🛠️ Herrería</button>
-                <button class="action-btn" id="player-stats-btn">📊 Mis Stats</button>
-                <button class="action-btn" id="floor-navigate-btn">🗺️ Pisos</button>
-                <button class="action-btn" id="save-game-btn">💾 Guardar</button>
-                <button class="action-btn" id="load-game-btn">📂 Cargar</button>
-                <button class="action-btn" id="new-game-btn">🔄 Reiniciar</button>
+                <button class="action-btn" id="combat-btn"><i class="fas fa-sword"></i> Combatir</button>
+                <button class="action-btn" id="boss-combat-btn"><i class="fas fa-dragon"></i> Jefe del Piso</button>
+                <button class="action-btn" id="train-skill-btn"><i class="fas fa-hat-wizard"></i> Habilidades</button>
+                <button class="action-btn" id="inventory-btn"><i class="fas fa-backpack"></i> Inventario</button> 
+                <button class="action-btn" id="shop-btn"><i class="fas fa-shopping-cart"></i> Tienda</button>
+                <button class="action-btn" id="blacksmith-btn"><i class="fas fa-hammer"></i> Herrería</button>
+                <button class="action-btn" id="player-stats-btn"><i class="fas fa-chart-bar"></i> Mis Stats</button>
+                <button class="action-btn" id="save-game-btn"><i class="fas fa-save"></i> Guardar</button>
+                <button class="action-btn" id="new-game-btn"><i class="fas fa-sync"></i> Nuevo Juego</button>
             </div>
         </section>
 
-        <!-- Secciones de Wiki -->
+        <!-- Secciones Wiki -->
         <section id="wiki-personajes" class="section">
             <h2 class="section-title">Personajes</h2>
-            <div class="card-grid" id="characters-grid-display"></div>
+            <div id="characters-grid-display"></div>
         </section>
 
         <section id="wiki-arsenal" class="section">
             <h2 class="section-title">Arsenal</h2>
-            <div class="card-grid" id="weapons-grid-display"></div>
+            <div id="weapons-grid-display"></div>
         </section>
     </main>
 
@@ -126,15 +129,13 @@
     <button id="chat-toggle-btn" title="Asistente Yui"><i class="fas fa-comment-dots"></i></button>
     <div id="ai-chatbot-container">
         <div class="chat-header">
-            <span>Yui - Asistente IA</span>
-            <button id="close-chat-btn" style="background:none; border:none; color:#fff; cursor:pointer;"><i class="fas fa-times"></i></button>
+            <span>Yui - Asistente MHCP</span>
+            <button id="close-chat-btn"><i class="fas fa-times"></i></button>
         </div>
-        <div class="chat-messages" id="chat-messages">
-            <div class="message ai">Hola, soy Yui. ¿En qué puedo ayudarte en tu aventura por Aincrad?</div>
-        </div>
+        <div class="chat-messages" id="chat-messages"></div>
         <div class="chat-input-area">
             <input type="text" id="chat-input" placeholder="Pregúntale a Yui...">
-            <button id="send-chat-btn" class="action-btn" style="padding: 5px 15px;">Enviar</button>
+            <button id="send-chat-btn">Enviar</button>
         </div>
     </div>
 
@@ -153,30 +154,54 @@
     <div id="skillsModal" class="modal">
         <div class="modal-content large">
             <span class="close-modal-btn" data-target="skillsModal">&times;</span>
-            <h2>⚔️ Habilidades</h2>
+            <div class="skills-header">
+                <h2>⚔️ Habilidades y Talentos</h2>
+                <div class="sp-counter">SP Disponibles: <span id="player-sp-display">0</span></div>
+            </div>
+            <div class="skills-tabs">
+                <button class="skill-tab active" data-cat="sword_skills">Espada</button>
+                <button class="skill-tab" data-cat="passive_skills">Pasivas</button>
+                <button class="skill-tab" data-cat="talents">Talentos</button>
+            </div>
             <div id="skills-grid-display"></div>
+        </div>
+    </div>
+
+    <div id="playerStatsModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal-btn" data-target="playerStatsModal">&times;</span>
+            <h2>📊 Perfil del Jugador</h2>
+            <div id="stats-content-container"></div>
         </div>
     </div>
 
     <div id="combatModal" class="modal">
         <div class="modal-content xlarge">
             <div id="combat-active-view">
-                <h2 id="combat-title">¡Combate!</h2>
+                <h2 id="combat-title">¡COMBATE EN CURSO!</h2>
                 <div class="combat-arena">
                     <div id="combat-player-display">
                         <h3 id="combat-player-name">Jugador</h3>
                         <div class="combatant-icon"><i class="fas fa-user-ninja"></i></div>
                         <div class="sao-hp-bar-container"><div class="sao-hp-bar-fill" id="combat-player-hp-bar"></div></div>
+                        <div class="hp-text"><span id="combat-player-hp-current">0</span>/<span id="combat-player-hp-max">0</span></div>
                     </div>
+                    <div class="combat-vs">VS</div>
                     <div id="combat-enemy-display">
                         <h3 id="combat-enemy-name">Enemigo</h3>
                         <div class="combatant-icon" id="combat-enemy-icon">❓</div>
                         <div class="sao-hp-bar-container"><div class="sao-hp-bar-fill" id="combat-enemy-hp-bar-fill"></div></div>
+                        <div class="hp-text"><span id="combat-enemy-hp-current">0</span>/<span id="combat-enemy-hp-max">0</span></div>
                     </div>
                 </div>
+                <div id="combat-combo-display" class="combo-counter hidden">0 HITS!</div>
                 <div class="combat-actions">
-                    <button class="action-btn" id="combat-action-attack">🗡️ Atacar</button>
+                    <button class="action-btn" id="combat-action-attack">Atacar</button>
+                    <button class="action-btn" id="combat-show-skills">Habilidades</button>
+                    <button class="action-btn" id="combat-show-potions">Objetos</button>
                 </div>
+                <div id="combat-skills-list-container" class="combat-sub-menu" style="display:none;"></div>
+                <div id="combat-potions-list-container" class="combat-sub-menu" style="display:none;"></div>
                 <div class="combat-log" id="combat-log-display"></div>
             </div>
             <div id="combat-results-view" style="display:none;"></div>
@@ -185,8 +210,9 @@
 
     <div id="nameEntryModal" class="modal">
         <div class="modal-content">
-            <h2>Elige tu Nombre</h2>
-            <input type="text" id="playerNameInput" maxlength="15" placeholder="Nombre...">
+            <h2>LINK START</h2>
+            <p>Por favor, ingresa tu nombre de jugador para sincronizar con el sistema Cardinal.</p>
+            <input type="text" id="playerNameInput" maxlength="15" placeholder="Nombre de avatar...">
             <button class="action-btn" id="submitPlayerNameBtn">Confirmar</button>
         </div>
     </div>
@@ -194,7 +220,7 @@
     <div id="mobSelectionModal" class="modal">
         <div class="modal-content">
             <span class="close-modal-btn" data-target="mobSelectionModal">&times;</span>
-            <h2>Selecciona un Enemigo</h2>
+            <h2>Seleccionar Enemigo</h2>
             <div id="mobListContainer" class="mob-list-grid"></div>
         </div>
     </div>
