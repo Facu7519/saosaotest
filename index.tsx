@@ -6,10 +6,13 @@ import { initCombat } from './logic/combatLogic.js';
 import { renderWikiContent } from './ui/renderers.js'; 
 import { calculateEffectiveStats } from './logic/playerLogic.js';
 import { initChatbot } from './logic/chatbotLogic.js';
+import { showNotification } from './utils/helpers.js';
 
-function init() {
+async function init() {
+    console.log("Sistema Cardinal: Iniciando...");
+    
     // Cargar datos
-    const saved = localStorage.getItem('sao_save');
+    const saved = localStorage.getItem('sao_save_modular');
     if (saved) {
         Object.assign(Game.player, JSON.parse(saved));
     }
@@ -28,44 +31,47 @@ function init() {
 function setupEventListeners() {
     setupModalListeners();
 
-    // Toggle de Modos (Juego vs Wiki)
+    // Gestor de Vistas
     const toggleBtn = document.getElementById('view-mode-toggle');
-    const gameContainer = document.getElementById('game-view-container');
-    const wikiContainer = document.getElementById('wiki-view-container');
+    const viewGame = document.getElementById('view-game');
+    const viewWiki = document.getElementById('view-wiki');
     const yuiBtn = document.getElementById('yui-chat-toggle');
 
     toggleBtn?.addEventListener('click', () => {
         const isGame = document.body.classList.contains('mode-game');
         if (isGame) {
             document.body.classList.replace('mode-game', 'mode-wiki');
-            gameContainer!.style.display = 'none';
-            wikiContainer!.style.display = 'block';
+            viewGame!.style.display = 'none';
+            viewWiki!.style.display = 'block';
             yuiBtn!.classList.remove('hidden');
-            toggleBtn.textContent = '🎮 Cambiar a Juego';
+            toggleBtn.textContent = '🎮 Modo Juego';
+            showNotification("Cargando base de datos Cardinal...", "default");
         } else {
             document.body.classList.replace('mode-wiki', 'mode-game');
-            gameContainer!.style.display = 'block';
-            wikiContainer!.style.display = 'none';
+            viewGame!.style.display = 'block';
+            viewWiki!.style.display = 'none';
             yuiBtn!.classList.add('hidden');
-            toggleBtn.textContent = '🌐 Cambiar a Wiki';
+            toggleBtn.textContent = '🌐 Modo Wiki';
         }
     });
 
     document.getElementById('submitPlayerNameBtn')?.addEventListener('click', () => {
-        const name = (document.getElementById('playerNameInput') as HTMLInputElement).value.trim();
-        if (name) {
+        const input = document.getElementById('playerNameInput') as HTMLInputElement;
+        const name = input.value.trim();
+        if (name.length >= 3) {
             Game.player.name = name;
             closeModal('nameEntryModal');
             updatePlayerHUD();
-            localStorage.setItem('sao_save', JSON.stringify(Game.player));
+            localStorage.setItem('sao_save_modular', JSON.stringify(Game.player));
+            showNotification(`Bienvenido, ${name}. Link Start!`, "success");
         }
     });
 
     document.getElementById('combat-btn')?.addEventListener('click', () => initCombat(false));
     document.getElementById('inventory-btn')?.addEventListener('click', () => openModal('inventoryModal'));
     document.getElementById('save-game-btn')?.addEventListener('click', () => {
-        localStorage.setItem('sao_save', JSON.stringify(Game.player));
-        alert('Progreso guardado en Cardinal.');
+        localStorage.setItem('sao_save_modular', JSON.stringify(Game.player));
+        showNotification("Progreso guardado localmente.", "success");
     });
 }
 

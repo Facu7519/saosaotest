@@ -22,38 +22,39 @@
     <div id="notification-area"></div>
     <div id="combat-animation-layer"></div>
 
-    <header>
+    <header id="main-header">
         <nav class="container"> 
-            <a href="#" class="logo-link"> <div class="logo">⚔️ AINCRAD</div></a>
+            <div class="logo">⚔️ AINCRAD</div>
             <div class="nav-links">
-                <button id="view-mode-toggle" class="nav-system-btn">🌐 Cambiar a Wiki</button>
+                <button id="view-mode-toggle" class="nav-system-btn">🌐 Modo Wiki</button>
                 <button id="music-toggle-btn" class="nav-system-btn">🔊 Música</button>
+                <button id="save-game-btn" class="nav-system-btn">💾 Guardar</button>
             </div>
         </nav>
     </header>
 
     <main class="main-content">
-        <!-- SECCIÓN JUEGO -->
-        <div id="game-view-container">
+        <!-- VISTA JUEGO -->
+        <div id="view-game">
             <section class="hero">
                 <div class="hero-content">
                     <h1>LINK START</h1>
-                    <p class="hero-subtitle">Bienvenido al castillo flotante de Aincrad.</p>
+                    <p class="hero-subtitle">Bienvenido al sistema Cardinal.</p>
                 </div>
             </section>
 
             <section id="game-panel" class="interactive-panel container">
-                <div class="floor-display">Piso: <span id="current-floor">1</span> - <span id="floor-name">Bosque del Inicio</span></div>
+                <div class="floor-display">Piso: <span id="current-floor">1</span> - <span id="floor-name">...</span></div>
                 <div class="sao-player-hud">
                     <div class="sao-hud-info">
-                        <div class="sao-player-name" id="sao-player-name-display">Cargando...</div>
+                        <div class="sao-player-name" id="sao-player-name-display">...</div>
                         <div class="sao-hp-bar-container">
                             <div class="sao-hp-bar-fill" id="sao-hp-bar"></div>
                         </div>
                     </div>
                     <div class="sao-hud-stats">
-                        <div class="sao-hp-text"><span id="player-hp-current">100</span>/<span id="player-hp-max">100</span></div>
-                        <div class="sao-player-level">LV: <span id="player-level">1</span></div>
+                        <div class="sao-hp-text"><span id="player-hp-current">0</span>/<span id="player-hp-max">0</span></div>
+                        <div class="sao-player-level">LV: <span id="player-level">0</span></div>
                     </div>
                 </div>
                 <div class="action-buttons">
@@ -61,55 +62,53 @@
                     <button class="action-btn" id="boss-combat-btn">👹 Jefe</button>
                     <button class="action-btn" id="inventory-btn">🎒 Inventario</button> 
                     <button class="action-btn" id="skills-btn">⚔️ Skills</button>
-                    <button class="action-btn" id="save-game-btn">💾 Guardar</button>
                 </div>
             </section>
         </div>
 
-        <!-- SECCIÓN WIKI -->
-        <div id="wiki-view-container" style="display: none;">
+        <!-- VISTA WIKI -->
+        <div id="view-wiki" style="display: none;">
             <div class="container">
                 <h2 class="section-title">Enciclopedia Cardinal</h2>
-                
-                <section id="wiki-personajes" class="section">
-                    <h3 class="wiki-title">Personajes Clave</h3>
-                    <div class="card-grid" id="characters-grid-display"></div>
-                </section>
-
-                <section id="wiki-arsenal" class="section">
-                    <h3 class="wiki-title">Arsenal Legendario</h3>
-                    <div class="card-grid" id="weapons-grid-display"></div>
-                </section>
+                <div id="wiki-content-area">
+                    <section class="wiki-section">
+                        <h3>Personajes</h3>
+                        <div id="characters-grid-display" class="card-grid"></div>
+                    </section>
+                    <section class="wiki-section">
+                        <h3>Arsenal</h3>
+                        <div id="weapons-grid-display" class="card-grid"></div>
+                    </section>
+                </div>
             </div>
         </div>
     </main>
 
-    <!-- Chatbot Yui (Solo en Wiki) -->
-    <button id="yui-chat-toggle" class="chat-btn hidden"><i class="fas fa-comment-dots"></i> YUI</button>
+    <!-- Chatbot Yui -->
+    <button id="yui-chat-toggle" class="chat-btn hidden"><i class="fas fa-robot"></i> YUI</button>
     <div id="yui-chat-container" class="chat-window hidden">
         <div class="chat-header">
-            <span>Yui - MHCP-001</span>
+            <span>MHCP-001: YUI</span>
             <button id="close-chat">&times;</button>
         </div>
         <div id="chat-messages" class="chat-messages"></div>
         <div class="chat-input">
-            <input type="text" id="user-input" placeholder="Pregúntale a Yui...">
+            <input type="text" id="user-input" placeholder="Pregunta algo sobre Aincrad...">
             <button id="send-btn">Enviar</button>
         </div>
     </div>
 
-    <!-- Modales Genéricos -->
+    <!-- Modales -->
     <div id="nameEntryModal" class="modal"><div class="modal-content">
-        <h2>IDENTIFICACIÓN DE AVATAR</h2>
-        <input type="text" id="playerNameInput" placeholder="Ingresa tu nombre...">
-        <button class="action-btn" id="submitPlayerNameBtn">Link Start</button>
+        <h2>INICIALIZACIÓN DE AVATAR</h2>
+        <input type="text" id="playerNameInput" placeholder="Nombre de jugador...">
+        <button class="action-btn" id="submitPlayerNameBtn">Acceder</button>
     </div></div>
 
     <div id="inventoryModal" class="modal"><div class="modal-content large">
         <span class="close-modal-btn" data-target="inventoryModal">&times;</span>
-        <h2>🎒 Inventario</h2>
+        <h2>Inventario</h2>
         <div id="inventory-grid-display" class="inventory-grid"></div>
-        <div class="equipment-slots"></div>
     </div></div>
 
     <script type="module" src="index.tsx"></script>

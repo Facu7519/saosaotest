@@ -2,6 +2,8 @@
 import { GoogleGenAI } from "@google/genai";
 import { Game } from "../state/gameState.js";
 
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
 export function initChatbot() {
     const toggle = document.getElementById('yui-chat-toggle');
     const container = document.getElementById('yui-chat-container');
@@ -9,6 +11,8 @@ export function initChatbot() {
     const send = document.getElementById('send-btn');
     const input = document.getElementById('user-input');
     const messages = document.getElementById('chat-messages');
+
+    if (!toggle || !container) return;
 
     toggle.onclick = () => container.classList.toggle('hidden');
     close.onclick = () => container.classList.add('hidden');
@@ -20,55 +24,54 @@ export function initChatbot() {
         appendMessage('user', text);
         input.value = '';
 
-        const thinkingMsg = appendMessage('yui', 'Analizando datos de Cardinal...', true);
+        const thinkingDiv = appendMessage('yui', 'Consultando con Cardinal...', true);
 
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const playerContext = `Jugador: ${Game.player.name}, Nivel: ${Game.player.level}, Piso: ${Game.player.currentFloor}.`;
             
-            // Si la pregunta parece sobre datos actuales o generales, usamos Flash con Search
-            // Si es compleja sobre el sistema, usamos Pro con Thinking
-            const isComplex = text.length > 50 || text.includes('como') || text.includes('por qué');
+            // Lógica de selección de modelo
+            const isLoreQuestion = text.toLowerCase().includes('quien es') || text.toLowerCase().includes('historia');
             
             let response;
-            if (isComplex) {
-                response = await ai.models.generateContent({
-                    model: 'gemini-3-pro-preview',
-                    contents: text,
-                    config: {
-                        systemInstruction: `Eres Yui, el MHCP-001 de SAO. Eres la hija virtual de Kirito y Asuna. 
-                        Tu tono es dulce, protector y servicial. Respondes dudas del juego Aincrad Chronicles.
-                        Estado del jugador actual: ${Game.player.name}, LV ${Game.player.level}, Piso ${Game.player.currentFloor}.`,
-                        thinkingConfig: { thinkingBudget: 32768 }
-                    }
-                });
-            } else {
+            if (isLoreQuestion) {
+                // Flash con búsqueda para datos rápidos y lore
                 response = await ai.models.generateContent({
                     model: 'gemini-3-flash-preview',
                     contents: text,
                     config: {
                         tools: [{ googleSearch: {} }],
-                        systemInstruction: "Eres Yui de SAO. Responde de forma breve y amable."
+                        systemInstruction: `Eres Yui de SAO. Sé breve. Contexto: ${playerContext}`
+                    }
+                });
+            } else {
+                // Pro con Thinking para estrategias complejas
+                response = await ai.models.generateContent({
+                    model: 'gemini-3-pro-preview',
+                    contents: text,
+                    config: {
+                        thinkingConfig: { thinkingBudget: 32768 },
+                        systemInstruction: `Eres Yui, una IA de soporte MHCP. Eres amable y llamas al usuario 'Papá' o 'Mamá'. Ayuda con estrategias del juego. Contexto: ${playerContext}`
                     }
                 });
             }
 
-            thinkingMsg.remove();
+            thinkingDiv.remove();
             appendMessage('yui', response.text);
 
-            // Mostrar fuentes si usó Google Search
+            // Renderizar fuentes si existen
             const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
             if (chunks) {
-                const sources = chunks.map(c => c.web?.uri).filter(Boolean);
+                const sources = chunks.filter(c => c.web).map(c => c.web);
                 if (sources.length > 0) {
-                    const links = document.createElement('div');
-                    links.className = 'chat-sources';
-                    links.innerHTML = '<small>Fuentes: </small>' + sources.map(s => `<a href="${s}" target="_blank">Enlace</a>`).join(', ');
-                    messages.appendChild(links);
+                    const linksDiv = document.createElement('div');
+                    linksDiv.className = 'sources-list';
+                    linksDiv.innerHTML = '<small>Fuentes: </small>' + sources.map(s => `<a href="${s.uri}" target="_blank">${s.title || 'Link'}</a>`).join(', ');
+                    messages.appendChild(linksDiv);
                 }
             }
 
         } catch (error) {
-            thinkingMsg.textContent = "Error de sincronización con Cardinal.";
+            thinkingDiv.textContent = "Error de conexión con el servidor central.";
             console.error(error);
         }
         messages.scrollTop = messages.scrollHeight;
@@ -79,7 +82,7 @@ export function initChatbot() {
 
     function appendMessage(sender, text, isThinking = false) {
         const div = document.createElement('div');
-        div.className = `message ${sender}`;
+        div.className = `message ${sender} ${isThinking ? 'thinking-text' : ''}`;
         div.textContent = text;
         messages.appendChild(div);
         messages.scrollTop = messages.scrollHeight;

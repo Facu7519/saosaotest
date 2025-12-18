@@ -1,60 +1,38 @@
+
 # ⚔️ SAO: Aincrad Chronicles (Modular)
 
-Bienvenido a **Sword Art Online: Aincrad Chronicles**, un RPG de texto y gestión basado en navegador, construido con una arquitectura moderna de JavaScript (ES Modules).
+Sistema RPG basado en la arquitectura Cardinal, modularizado para expansión infinita.
 
-Este proyecto simula la experiencia de subir los 100 pisos de Aincrad, gestionar tu equipamiento, combatir monstruos, forjar armas legendarias y desbloquear habilidades únicas.
+## 📜 Reglas de Oro del Código
 
----
+Para mantener la integridad del sistema y evitar errores de `Uncaught TypeError`, debes seguir estas reglas estrictamente:
 
-## 🎮 Guía para Jugadores
+1.  **Extensiones de Archivo:** Todas las importaciones internas DEBEN terminar en `.js`. El navegador no resuelve archivos automáticamente sin extensión.
+    *   ✅ `import { Game } from './state/gameState.js';`
+    *   ❌ `import { Game } from './state/gameState';`
 
-### 🚀 Cómo Empezar
-Este juego utiliza **Módulos ES6** modernos. Por políticas de seguridad de los navegadores (CORS), **no funcionará si abres el archivo `index.html` directamente**.
+2.  **Rutas Relativas:** No uses prefijos `src/` o alias `@/`. Usa rutas relativas puras.
+    *   ✅ `import { ... } from '../logic/playerLogic.js';`
+    *   ❌ `import { ... } from 'src/logic/playerLogic.js';`
 
-**Debes usar un Servidor Web Local:**
+3.  **Estado Global:** Nunca definas variables de estado fuera de `state/gameState.js`. Si necesitas un dato nuevo (como `bossKills`), agrégalo al objeto `Game.player` allí.
 
-1.  **Opción Recomendada (VS Code)**:
-    *   Instala la extensión **Live Server**.
-    *   Haz clic derecho en `index.html` y selecciona **"Open with Live Server"**.
-2.  **Opción Terminal (Python)**:
-    *   Abre una terminal en la carpeta del proyecto.
-    *   Ejecuta: `python -m http.server` (o `python3 -m http.server`).
-    *   Abre tu navegador en `http://localhost:8000`.
+4.  **Google GenAI:**
+    *   Usa siempre `gemini-3-pro-preview` para tareas que requieran `thinkingBudget`.
+    *   Usa `gemini-3-flash-preview` con `googleSearch` para consultas de información real o lore.
+    *   Accede al texto mediante `.text`, nunca `.text()`.
 
-### 🕹️ Controles y Mecánicas
-*   **Progresión**: Tu objetivo es subir de piso. Derrota al **Jefe del Piso** actual para desbloquear el siguiente.
-*   **Combate**:
-    *   **Atacar**: Ataque físico estándar. Genera "Hits" para el contador de combo.
-    *   **Habilidades**: Técnicas especiales que consumen MP.
-        *   *Nota*: Habilidades poderosas como "Starburst Stream" requieren desbloquear primero la habilidad pasiva **Doble Empuñadura** en el árbol de habilidades.
-    *   **Pociones**: Recupera HP/MP en mitad de la batalla.
-*   **Herrería y Tiendas**:
-    *   Los monstruos sueltan materiales (como *Mena de Hierro* o *Cristales*).
-    *   Ve a la **Herrería** para **Forjar** armas nuevas o **Mejorar** tu equipo actual (+1, +2, etc.).
-*   **Doble Empuñadura (Dual Wield)**:
-    *   Esta es una **Habilidad Única**. Al desbloquearla con SP, tu inventario mostrará un nuevo espacio de equipo: **Mano Izquierda (Dual)**.
-    *   Esto te permite equipar dos espadas a la vez, sumando el ataque de ambas, pero te impide usar escudos.
+## 📂 Estructura del Proyecto
 
----
+*   `/data`: Objetos constantes (JSON). Pisos, items, enemigos.
+*   `/logic`: Algoritmos puros. Combate, IA de Yui, cálculo de experiencia.
+*   `/state`: El estado único de la aplicación.
+*   `/ui`: Manipulación del DOM y renderizado de componentes.
+*   `/utils`: Funciones de apoyo (notificaciones, generadores).
 
-## 👨‍💻 Guía para Desarrolladores
+## 🚀 Cómo Expandir
 
-El proyecto está modularizado para facilitar la expansión. La lógica está separada de los datos.
-
-### 📂 Estructura del Proyecto
-
-```text
-/
-├── css/                  # Estilos visuales (Juego, Wiki, Scrollbars)
-├── src/
-│   ├── data/             # BASES DE DATOS (Aquí es donde agregas contenido)
-│   │   ├── items.js      # Armas, armaduras, consumibles y recetas
-│   │   ├── floors.js     # Datos de Pisos, Monstruos y Jefes
-│   │   ├── skills.js     # Definición de habilidades (activas/pasivas)
-│   │   └── wiki.js       # Texto para la sección de enciclopedia
-│   ├── logic/            # Lógica del juego (Combate, Stats, Crafting)
-│   ├── state/            # Estado global (gameState.js)
-│   ├── ui/               # Renderizado del DOM (HUD, Modales)
-│   └── main.js           # Inicialización y Event Listeners
-└── index.html            # Estructura HTML principal
-```
+Para agregar un nuevo piso:
+1. Ve a `data/floors.js`.
+2. Agrega una nueva entrada al objeto `floorData`.
+3. El sistema lo detectará automáticamente en la lógica de navegación y combate.
